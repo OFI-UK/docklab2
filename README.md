@@ -13,3 +13,6 @@ Code for running Docklab 2 at OFL
  - Install ROS 2 Jazzy Jalisco following ROS 2 documentation here: https://docs.ros.org/en/jazzy/Installation/Ubuntu-Install-Debs.html#id4
  - Install github if not installed already following guide here: https://gist.github.com/derhuerst/1b15ff4652a867391f03#file-linux-md
  - Clone docklab-2 repository to /Documents/github
+
+## Notes: 
+ - colcon build command can crash the Raspberry Pi when running, use: colcon build --symlink-install --parallel-workers 1 (https://answers.ros.org/question/404536/colcon-build-fails-on-ros2-tutorials/)
