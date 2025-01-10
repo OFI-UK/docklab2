@@ -38,8 +38,13 @@ Code for running Docklab 2 at OFL
 ## Docs: 
 # ABPX:
 Services: 
+relay_server3 - server for services for changing state of relays on RPi Relay Board with 3 relays (https://thepihut.com/products/raspberry-pi-relay-board)
+relay_server6 - server for services for changing state of relays on sb components PiRelay 6 Channel (https://thepihut.com/products/pirelay-6)
+
 Nodes: 
+
 Topics: 
+
 Services:
 
 ## Notes: 
