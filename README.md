@@ -20,7 +20,8 @@ Code for running Docklab 2 at OFL
  - Source the overlay by running "source install/setup.bash" in a new terminal before running 
 
 # Python Setup Instructions
- - Create virtual environment for running python in home directory called "py_env"
+ - Install venv for python3 by running "sudo apt install python3.12-venv"
+ - Create virtual environment for running python in home directory called "py_env" by running "python3 -m venv py_env"
 
 # Bashrc setup 
  - Add "source /opt/ros/jazzy/setup.bash" to .bashrc file in home directory to source ROS on start up of the terminal
