@@ -34,7 +34,16 @@ Code for running Docklab 2 at OFL
  
 ## Run instructions: 
  - Launch abp1 code using command ros2 launch docklab2 docklab2_abp1.launch.py
- 
+## Mocap
+https://github.com/MOCAP4ROS2-Project/mocap4ros2_optitrack.git
+- follow instructions
+- connect laptot to mocap laptop with ethernet. (check if you can do this wirelessly)
+- set motive to unicast with ip address of ros2 laptop 
+- change config folder to ip address of local and server
+- soruce wkspace
+- stream
+
+- this package doesnt work on a Raspberry Pis' or on anything older than humble
 ## Docs: 
 # ABPX:
 Services: 
@@ -49,3 +58,5 @@ Services:
 
 ## Notes: 
  - colcon build command can crash the Raspberry Pi when running, use: colcon build --symlink-install --executor sequential (https://answers.ros.org/question/404536/colcon-build-fails-on-ros2-tutorials/)
+
+ - 
