@@ -17,14 +17,15 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='labpi',
-    maintainer_email='labpi@todo.todo',
-    description='TODO: Package description',
+    maintainer='Ben Rose',
+    maintainer_email='ben.rose@orbitfab.com',
+    description='Docklab 2 ROS 2 Package',
     license='Apache-2.0',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-        'service = docklab2.relay_server6:main',
+        'relay_control = docklab2.relay_server6:main',
+        'GRASP_control = docklab2.GRASP_node:main'
         ],
     },
 )

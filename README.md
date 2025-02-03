@@ -18,6 +18,37 @@ Code for running Docklab 2 at OFL
  - Navigate back to /docklab2_ws and run "colcon build --symlink-install --executor sequential" to build the overlay
  - Close the terminal used to build the overlay before running
  - Source the overlay by running "source install/setup.bash" in a new terminal before running 
+ 
+# Network Setup Instructions
+ - Connect device to AC750 Wi-Fi Travel Router (TP-Link_8AC3 not TP-Link_8AC3_5G)
+ - Login to router at http://tplinkwifi.net and configure access as required
+ - Note down IP address and subnet mask of router on screen
+ - Find network interface name for device by running command "ip addr". Ethernet connections will start with the letter e, wireless connections will start with the letter w. 
+ - Write the network configuration to the device using "sudo nano /etc/netplan/docklab-network-config.yaml" (see config below)
+ - Apply changes using "sudo netplan generate" and "sudo netplan apply"
+"""
+network:
+    version: 2
+    renderer: NetworkManager
+    
+    wifis: 
+        wlan0:
+            dhcp4: no
+            addresses: [192.168.0.XXX/24]
+            gateway4: 192.168.0.1
+            nameservers:
+                addresses: [192.168.0.1]
+            access-points:
+                "TP-Link_8AC3"
+                    password: "YYYYYYYY"
+"""
+XXX is the port of the device: 
+200 is the base station
+201 is abp1
+202 is abp2
+YYYYYYYY is the password for the router
+
+ - Setup ssh using "sudo apt install openssh-server"
 
 # Python Setup Instructions
  - Install venv for python3 by running "sudo apt install python3.12-venv"
@@ -26,6 +57,9 @@ Code for running Docklab 2 at OFL
 # Bashrc setup 
  - Add "source /opt/ros/jazzy/setup.bash" to .bashrc file in home directory to source ROS on start up of the terminal
  - Add "source py_env/bin/activate" to .bashrc file in home directory to source python environment on start up of the terminal 
+ 
+# Serial setup instructions
+ - Execute "sudo chmod 666 /dev/ttyACM0" to enable opening serial port ttyACM0. This port may change if there is need to use serial comms with hardware other than the Teensy 4.1 
  
 # LabJack Setup Instructions
  - Follow instructions for downloading LabJack for python here: https://support.labjack.com/docs/python-for-ljm-windows-mac-linux
@@ -42,6 +76,7 @@ relay_server3 - server for services for changing state of relays on RPi Relay Bo
 relay_server6 - server for services for changing state of relays on sb components PiRelay 6 Channel (https://thepihut.com/products/pirelay-6)
 
 Nodes: 
+GRASP_node - node for communicating with GRASP MDE and updating GRASP state
 
 Topics: 
 

@@ -9,7 +9,13 @@ def generate_launch_description():
         Node(
             package='docklab2',
             namespace='abp1',
-            executable='service',
+            executable='relay_control',
             name='relay_server6'
+        ),
+        Node(
+            package='docklab2',
+            namespace='abp1',
+            executable='GRASP_control',
+            name='GRASP_node'
         )
     ])
