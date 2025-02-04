@@ -39,7 +39,7 @@ network:
             nameservers:
                 addresses: [192.168.0.1]
             access-points:
-                "TP-Link_8AC3"
+                "TP-Link_8AC3":
                     password: "YYYYYYYY"
 """
 XXX is the port of the device: 
