@@ -24,7 +24,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-        'relay_control = docklab2.relay_server6:main',
+        'relay_control6 = docklab2.relay_server6:main',
+        'relay_control3 = docklab2.relay_server3:main',
         'GRASP_control = docklab2.GRASP_node:main'
         ],
     },

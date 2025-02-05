@@ -17,9 +17,9 @@ class RelayServer(Node):
         super().__init__('relay_server3')
         # Set up GPIO
         # Setting up relays
-        self.Relay_Ch1 = DigitalOutputDevice("BCM26")
-        self.Relay_Ch2 = DigitalOutputDevice("BCM20")
-        self.Relay_Ch3 = DigitalOutputDevice("BCM21")
+        self.Relay_Ch1 = DigitalOutputDevice(pin="BCM26",active_high=False)
+        self.Relay_Ch2 = DigitalOutputDevice(pin="BCM20",active_high=False)
+        self.Relay_Ch3 = DigitalOutputDevice(pin="BCM21",active_high=False)
         
         # Add set Ch1 service
         self.srv = self.create_service(SetBool, 'set_Ch1', self.set_Ch1_callback)
