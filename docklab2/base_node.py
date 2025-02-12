@@ -67,8 +67,10 @@ class BaseNode(Node):
                 time.sleep(1) # Wait for serial connection to establish
                 self.abp1_GRASP_pub_.publish(String(data='HOME'))
                 time.sleep(20)
-                self.abp1_GRASP_pub_.publish(String(data='AVC_HOME'))
+                self.abp1_GRASP_pub_.publish(String(data='OPEN'))
                 time.sleep(20)
+                # self.abp1_GRASP_pub_.publish(String(data='AVC_HOME'))
+                # time.sleep(20)
             case 'DOCK':
                 # Start recording to rosbag "docking" + date and time in YYYYMMDDHHMMSS format
                 filename = 'docking_' + time.strftime('%Y%m%d%H%M%S')
@@ -77,14 +79,16 @@ class BaseNode(Node):
 
                 # Run docking procedure
                 # Start air bearings
-                self.abp1_airb_req.data = True
-                self.abp1_airb_cli_.call_async(self.abp1_airb_req)
-                self.abp2_airb_req.data = True
+                self.abp2_airb_req.data = False
                 self.abp2_airb_cli_.call_async(self.abp2_airb_req)
                 # Start GRASP
                 self.abp1_GRASP_pub_.publish(String(data='RUN'))
+                # Delay whilst moving initally 
+                time.sleep(0)
+                self.abp1_airb_req.data = True
+                self.abp1_airb_cli_.call_async(self.abp1_airb_req)
                 # Delay whilst docking procedure runs
-                time.sleep(20)
+                time.sleep(120)
                 # Stop air bearings
                 self.abp1_airb_req.data = False
                 self.abp1_airb_cli_.call_async(self.abp1_airb_req)
@@ -106,7 +110,7 @@ class BaseNode(Node):
                 self.abp2_airb_req.data = True
                 self.abp2_airb_cli_.call_async(self.abp2_airb_req)
                 # Start GRASP
-                self.abp1_GRASP_pub_.publish(String(data='UNDOCK'))
+                self.abp1_GRASP_pub_.publish(String(data='OPEN'))
                 # Delay whilst undocking procedure runs
                 time.sleep(20)
                 # Stop air bearings

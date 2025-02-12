@@ -81,67 +81,46 @@ class GRASPNode(Node):
             case "HOME":
                 state = "1"
                 self.get_logger().info('Updating GRASP state to HOME')
-                self.ser.reset_input_buffer()
                 self.ser.write(state.encode())
             case "OPEN":
                 state = "2"
                 self.get_logger().info('Updating GRASP state to OPEN')
-                self.ser.reset_input_buffer()
                 self.ser.write(state.encode())
             case "CLOSE":
                 state = "3"
                 self.get_logger().info('Updating GRASP state to CLOSE')
-                self.ser.reset_input_buffer()
                 self.ser.write(state.encode())
             case "RETRACT":
                 state = "4"
                 self.get_logger().info('Updating GRASP state to RETRACT')
-                self.ser.reset_input_buffer()
                 self.ser.write(state.encode())
             case "RELEASE":
                 state = "5"
                 self.get_logger().info('Updating GRASP state to RELEASE')
-                self.ser.reset_input_buffer()
                 self.ser.write(state.encode())
             case "RUN":
                 state = "6"
                 self.get_logger().info('Updating GRASP state to RUN')
-                self.ser.reset_input_buffer()
-                self.ser.write(state.encode())
-            case "UNDOCK":
-                state = "7"
-                self.get_logger().info('Updating GRASP state to UNDOCK')
-                self.ser.reset_input_buffer()
                 self.ser.write(state.encode())
             case "MORE":
-                state = "8"
+                state = "7"
                 self.get_logger().info('Updating GRASP state to MORE')
-                self.ser.reset_input_buffer()
                 self.ser.write(state.encode())
             case "LESS":
-                state = "9"
+                state = "8"
                 self.get_logger().info('Updating GRASP state to LESS')
-                self.ser.reset_input_buffer()
                 self.ser.write(state.encode())
             case "AVC_HOME":
-                state = "10"
+                state = "9"
                 self.get_logger().info('Updating GRASP state to AVC_HOME')
-                self.ser.reset_input_buffer()
                 self.ser.write(state.encode())
-            case "AVC_RETRACT":
-                state = "12"
+            case "FORWARD":
+                state = "10"
                 self.get_logger().info('Updating GRASP state to AVC_RETRACT')
-                self.ser.reset_input_buffer()
                 self.ser.write(state.encode())
-            case "AVC_MORE":
-                state = "13"
+            case "BACK":
+                state = "11"
                 self.get_logger().info('Updating GRASP state to AVC_MORE')
-                self.ser.reset_input_buffer()
-                self.ser.write(state.encode())
-            case "AVC_LESS":
-                state = "14"
-                self.get_logger().info('Updating GRASP state to AVC_LESS')
-                self.ser.reset_input_buffer()
                 self.ser.write(state.encode())
             case _: # Catch invalid command 
                 self.get_logger().warning('Unknown GRASP state recieved')
