@@ -115,7 +115,7 @@ class GRASPNode(Node):
     
         #Connect with the motor
         
-        grapple_Solo = solo.SoloMotorControllerUart(port="/dev/ttyACM1",baudrate=solo.UartBaudRate.RATE_937500) #This port connection worked.
+        grapple_Solo = solo.SoloMotorControllerUart(port="/dev/ttyACM0",baudrate=solo.UartBaudRate.RATE_937500) #This port connection worked.
         
         print('Reseting position to zero:')
         grapple_Solo.reset_position_to_zero()
@@ -177,7 +177,7 @@ class GRASPNode(Node):
     
         #Connect with the motor
         
-        avc_Solo = solo.SoloMotorControllerUart(port="/dev/ttyACM0",baudrate=solo.UartBaudRate.RATE_937500) #This port connection worked.
+        avc_Solo = solo.SoloMotorControllerUart(port="/dev/ttyACM1",baudrate=solo.UartBaudRate.RATE_937500) #This port connection worked.
         
         print('Reseting position to zero:')
         avc_Solo.reset_position_to_zero()
@@ -398,9 +398,9 @@ class GRASPNode(Node):
         self.pub_gra_motor_curr_iq.publish(current_iq_msg)
  
         # ----------------- AVC_DATA ----------------------------------
-        msg = String()
-        msg.data = f"State: {self.avc_state}, Pos ref: {self.avc_motor_pos_ref}, Pos counts: {self.avc_motor_pos},Speed: {self.avc_motor_speed},Current Iq: {self.avc_motor_current}"
-        self.pub_avc_motor_feedback.publish(msg)
+        avc_msg = String()
+        avc_msg.data = f"State: {self.avc_state}, Pos ref: {self.avc_motor_pos_ref}, Pos counts: {self.avc_motor_pos},Speed: {self.avc_motor_speed},Current Iq: {self.avc_motor_current}"
+        self.pub_avc_motor_feedback.publish(avc_msg)
 
         #Position Feedback
         avc_motor_pos_msg = Int32()
@@ -415,7 +415,7 @@ class GRASPNode(Node):
         #Current Phase Iq Feedback
         avc_current_iq_msg = Float64()
         avc_current_iq_msg.data = self.avc_motor_current
-        #self.pub_avc_motor_curr_iq.publish(avc_current_iq_msg)
+        self.pub_avc_motor_curr_iq.publish(avc_current_iq_msg)
         
     # ================================= External flags management code ==============================================    
     def GRASP_external_flags(self,msg):
@@ -764,8 +764,6 @@ class GRASPNode(Node):
                 self.get_logger().warning('Unknown GRASP state received')
              
         # --------------  Checking AVC states and calling relevant code. ---------------------------  
-        
-        
         if self.grapple_state == "HARD_DOCK":
         # If we are in HARD_DOCK, we can run the AVC code
             self.avc_motor_pos_ref, error = self.avc_Solo.get_position_reference()
@@ -815,8 +813,6 @@ class GRASPNode(Node):
                         self.avc_solo.reset_position_to_zero()
                         self.avc_solo.set_position_reference(0)
                         
-                        self.avc_state = 'AVC_HOME'
-                        
                 case "AVC_HOME":
                     #We do nothing on this state. Just waitnig to receivecommand to go pos1
                     state = "11"
@@ -835,7 +831,7 @@ class GRASPNode(Node):
             self.avc_motor_pos_ref = 0
             self.avc_motor_pos = 0
             self.avc_motor_speed = 0
-            self.avc_motor_current = 0
+            self.avc_motor_current = 0.0
     
         #time_1 = time.time()
         # Publish data
