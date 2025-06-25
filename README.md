@@ -132,3 +132,4 @@ On base station:
 
 ## Notes: 
  - colcon build command can crash the Raspberry Pi when running, use: colcon build --symlink-install --executor sequential (https://answers.ros.org/question/404536/colcon-build-fails-on-ros2-tutorials/)
+ - Current method for killing bag file recording means metadata is not recorded correctly for bag files. Fix this with "ros bag reindex" for now
