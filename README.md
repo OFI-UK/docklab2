@@ -78,7 +78,8 @@ sudo reboot
     - Install AArch64 installer for LabJack LJM Library from here: https://files.labjack.com/installers/LJM/Linux/AArch64/beta/LabJack-LJM_2025-01-10.zip (see INSTALL.md for instructions)
     - Install labjack-ljm to py_env environment using "pip install labjack-ljm" (make sure py_env environment is active during this step)
 
-# Mocap
+# Mocap Setup Instructions
+- Package:
 https://github.com/MOCAP4ROS2-Project/mocap4ros2_optitrack.git
 - Follow instructions linked above
 - Connect base station to mocap laptop over ethernet or wireless connection.
@@ -111,7 +112,7 @@ https://github.com/MOCAP4ROS2-Project/mocap4ros2_optitrack.git
 [mocap4r2_optitrack_driver_main-1] [INFO] [1750870175.510289276] [mocap4r2_optitrack_driver_node]: Configured!
 - Transition node to active
 
-- this package doesnt work on a Raspberry Pis' or on anything older than humble
+- This package doesnt work on a Raspberry Pis' or on anything older than humble
 ## Docs: 
 
 # ABPX:
