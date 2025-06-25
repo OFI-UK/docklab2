@@ -136,4 +136,3 @@ On base station:
 
 ## Notes: 
  - colcon build command can crash the Raspberry Pi when running, use: colcon build --symlink-install --executor sequential (https://answers.ros.org/question/404536/colcon-build-fails-on-ros2-tutorials/)
- - 
