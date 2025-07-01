@@ -79,18 +79,17 @@ sudo reboot
     - Install labjack-ljm to py_env environment using "pip install labjack-ljm" (make sure py_env environment is active during this step)
 
 # Mocap Setup Instructions
-- Package:
-https://github.com/MOCAP4ROS2-Project/mocap4ros2_optitrack.git
-- Follow instructions linked above
 - Connect base station to mocap laptop over ethernet or wireless connection.
   - If connecting wirelessly be aware latency can be high
+- Launch and setup motive performing calibrations as necessary 
 - Set motive to unicast with local interface of mocap laptop on shared network with base station
 - On base station, setup optitrack configuration at mocap4r2_ws/src/mocap4ros2_optitrack/mocap4r2_optitrack_driver/config/mocap4r2_optitrack_driver_params.yaml
   - Set server address as mocap laptop IP address on shared network
   - Set local address as base station IP address on shared network
   - Set other parameters to be the same as in the motive streaming menu where available
   - Do not change any other parameters
-- Source workspace and launch optitrack system
+  https://github.com/MOCAP4ROS2-Project/mocap4ros2_optitrack.git
+- Follow instructions linked above to source workspace and launch optitrack system
 - Successful launch will display the below:
 [mocap4r2_optitrack_driver_main-1] [INFO] [1750870175.394628061] [mocap4r2_optitrack_driver_node]: Trying to connect to Optitrack NatNET SDK at 192.168.0.100 ...
 [mocap4r2_optitrack_driver_main-1] [INFO] [1750870175.504141622] [mocap4r2_optitrack_driver_node]: ... connected!
@@ -110,7 +109,6 @@ https://github.com/MOCAP4ROS2-Project/mocap4ros2_optitrack.git
 [mocap4r2_optitrack_driver_main-1] [INFO] [1750870175.510198551] [mocap4r2_optitrack_driver_node]: Mocap Framerate : 240.00
 [mocap4r2_optitrack_driver_main-1] 
 [mocap4r2_optitrack_driver_main-1] [INFO] [1750870175.510289276] [mocap4r2_optitrack_driver_node]: Configured!
-- Transition node to active
 
 - This package doesnt work on a Raspberry Pis' or on anything older than humble
 ## Docs: 
@@ -130,21 +128,8 @@ Services:
 # Running Docklab 2: 
 Setup:
 
-On Labtop:
- - Start Motive on Labtop
- - If necessary calibrate camera setup
- - If necessary select assets 
- - Enable streaming of data to base station over Ethernet
-On base station: 
- - Open terminal and navigate to mocap4r2_ws
- - Source the workspace using "source install/setup.bash"
- - Launch the Optitrack system using "ros2 launch mocap4r2_optitrack_driver optitrack2.launch.py"
- - Open a new terminal and navigate to mocap4r2_ws
- - Source the workspace using "source install/setup.bash"
- - Transition the driver node to active using "ros2 lifecycle set /mocap4r2_optitrack_driver_node activate"
- - Open a new terminal and navigate to mocap4r2_ws
- - Source the workspace using "source install/setup.bash"
- - Run mocap_sub node using "ros2 run mocap_sub mocap_sub"
+On labtop and base station: 
+ - Complete motion capture setup as described above
 On ABPX:
  - Connect to ABPX over ssh from base station "ssh labpi@abpX.local"
  - Change directory to docklab2_ws and source the workspace using "source install/setup.bash"
@@ -155,9 +140,11 @@ Running:
 On base station: 
  - Open terminal and run rqt using "rqt"
  - Send commands to terminal manually over topic publisher or service tool.
+ - Plot data using plotjuggler "ros2 run plotjuggler plotjuggler"
  - To run complex commands:
  - Change directory to docklab2_ws and source the workspace using "source install/setup.bash"
  - Run the base control node using "ros2 run docklab2 base_control"
+
 
 ## Notes: 
  - colcon build command can crash the Raspberry Pi when running, use: colcon build --symlink-install --executor sequential (https://answers.ros.org/question/404536/colcon-build-fails-on-ros2-tutorials/)

@@ -22,15 +22,11 @@ class BaseNode(Node):
         super().__init__('base_node')
 
         # Setting up ABP1 interfaces 
-        self.abp1_GRASP_pub_ = self.create_publisher(String, 'abp1/GRASP_state', 10) #QoS arbitrarily set at 10
+        self.abp1_GRASP_pub_ = self.create_publisher(String, 'abp1/GRASP_flags', 10) #QoS arbitrarily set at 10
         self.abp1_GRASP_pub_ # prevent unused variable error
         # Setting up client for abp1 namespace services
         self.abp1_airb_cli_ = self.create_client(SetBool, 'abp1/set_Ch1')
         self.abp1_airb_req = SetBool.Request()
-        self.abp1_GRASPsc_cli_ = self.create_client(Trigger, 'abp1/serial_connect')
-        self.abp1_GRASPsc_req = Trigger.Request()
-        self.abp1_GRASPsd_cli_ = self.create_client(Trigger, 'abp1/serial_disconnect')
-        self.abp1_GRASPsd_req = Trigger.Request()
 
         # Setting up ABP2 interfaces
         # Setting up client for abp2 namespace services
@@ -63,14 +59,15 @@ class BaseNode(Node):
                 self.abp2_airb_req.data = False
                 self.abp2_airb_cli_.call_async(self.abp2_airb_req)
             case 'INIT':
-                self.abp1_GRASPsc_cli_.call_async(self.abp1_GRASPsc_req)
                 time.sleep(1) # Wait for serial connection to establish
-                self.abp1_GRASP_pub_.publish(String(data='HOME'))
-                time.sleep(20)
-                self.abp1_GRASP_pub_.publish(String(data='OPEN'))
-                time.sleep(20)
-                # self.abp1_GRASP_pub_.publish(String(data='AVC_HOME'))
-                # time.sleep(20)
+                msg = String()
+                msg.data = 'GO_HOME'
+                self.abp1_GRASP_pub_.publish(msg)
+                time.sleep(40)
+                msg = String()
+                msg.data = 'GO_OPEN'
+                self.abp1_GRASP_pub_.publish(msg)
+                time.sleep(40)
             case 'DOCK':
                 # Start recording to rosbag "docking" + date and time in YYYYMMDDHHMMSS format
                 filename = ' docking_' + time.strftime('%Y%m%d%H%M%S')
@@ -79,14 +76,12 @@ class BaseNode(Node):
 
                 # Run docking procedure
                 # Start air bearings
-                self.abp2_airb_req.data = False
+                self.abp2_airb_req.data = True
                 self.abp2_airb_cli_.call_async(self.abp2_airb_req)
-                # Start GRASP
-                self.abp1_GRASP_pub_.publish(String(data='RUN'))
-                # Delay whilst moving initally 
-                time.sleep(1)
                 self.abp1_airb_req.data = True
                 self.abp1_airb_cli_.call_async(self.abp1_airb_req)
+                # Start GRASP
+                self.abp1_GRASP_pub_.publish(String(data='GO_CAPTURE'))
                 # Delay whilst docking procedure runs
                 time.sleep(120)
                 # Stop air bearings
@@ -103,15 +98,15 @@ class BaseNode(Node):
                 command = 'ros2 bag record --all --output' + filename
                 self.bagprocess = subprocess.Popen([command], stdin=subprocess.PIPE, shell=True, cwd="/home/labpi/docklab2_ws/bag_files", executable='/bin/bash')
 
-                # Run docking procedure
+                # Run undocking procedure
                 # Start air bearings
-                self.abp2_airb_req.data = False
+                self.abp2_airb_req.data = True
                 self.abp2_airb_cli_.call_async(self.abp2_airb_req)
-                # Start GRASP
-                self.abp1_GRASP_pub_.publish(String(data='OPEN'))
                 self.abp1_airb_req.data = True
                 self.abp1_airb_cli_.call_async(self.abp1_airb_req)
-                # Delay whilst docking procedure runs
+                # Start GRASP
+                self.abp1_GRASP_pub_.publish(String(data='GO_RELEASE'))
+                # Delay whilst undocking procedure runs
                 time.sleep(120)
                 # Stop air bearings
                 self.abp1_airb_req.data = False
