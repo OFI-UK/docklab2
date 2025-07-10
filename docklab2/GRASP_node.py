@@ -117,6 +117,7 @@ class GRASPNode(Node):
         
         grapple_Solo = solo.SoloMotorControllerUart(port="/dev/ttyACM0",baudrate=solo.UartBaudRate.RATE_937500) #This port connection worked.
         
+        
         print('Reseting position to zero:')
         grapple_Solo.reset_position_to_zero()
         
