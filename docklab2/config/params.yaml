@@ -26,3 +26,6 @@ GRASP_node:
 
     feedback_params:
       frequency: 10 # [Hz]
+
+    state_machine_params:
+      frequency: 10 # [Hz]
