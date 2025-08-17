@@ -56,7 +56,9 @@ class GRASPNode(Node):
                 ('solo_params.speed_deceleration', rclpy.Parameter.Type.INTEGER_ARRAY),
                 ('solo_params.logger_level', rclpy.Parameter.Type.INTEGER_ARRAY),
 
-                ('feedback_params.frequency', rclpy.Parameter.Type.INTEGER)
+                ('feedback_params.frequency', rclpy.Parameter.Type.INTEGER),
+
+                ('state_machine_params.frequency', rclpy.Parameter.Type.INTEGER)
             ])
         
         # Find available serial ports
@@ -78,7 +80,8 @@ class GRASPNode(Node):
         self.avc_motor_control_mode = "POSITION"
         
         # Set up a function that constantly monitors the state machine
-        self.timer = self.create_timer(0.1, self.GRASP_state_machine)
+        self.state_machine_frequency = self.get_parameter('state_machine_params.frequency').get_parameter_value().integer_value
+        self.timer = self.create_timer(1.0 / self.state_machine_frequency, self.GRASP_state_machine)
 
         # Set up a function that publishes data at a set frequency
         self.feedback_frequency = self.get_parameter('feedback_params.frequency').get_parameter_value().integer_value
