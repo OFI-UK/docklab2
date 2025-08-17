@@ -54,7 +54,9 @@ class GRASPNode(Node):
                 ('solo_params.speed_limit', rclpy.Parameter.Type.INTEGER_ARRAY),
                 ('solo_params.speed_acceleration', rclpy.Parameter.Type.INTEGER_ARRAY),
                 ('solo_params.speed_deceleration', rclpy.Parameter.Type.INTEGER_ARRAY),
-                ('solo_params.logger_level', rclpy.Parameter.Type.INTEGER_ARRAY)
+                ('solo_params.logger_level', rclpy.Parameter.Type.INTEGER_ARRAY),
+
+                ('feedback_params.frequency', rclpy.Parameter.Type.INTEGER)
             ])
         
         # Find available serial ports
@@ -77,6 +79,10 @@ class GRASPNode(Node):
         
         # Set up a function that constantly monitors the state machine
         self.timer = self.create_timer(0.1, self.GRASP_state_machine)
+
+        # Set up a function that publishes data at a set frequency
+        self.feedback_frequency = self.get_parameter('feedback_params.frequency').get_parameter_value().integer_value
+        self.feedback_timer = self.create_timer(1.0 / self.feedback_frequency, self.publish_data)
         
         # Add serial close service
         #self.srv = self.create_service(Trigger, 'grapple_init', self.grapple_init_callback)
@@ -369,27 +375,27 @@ class GRASPNode(Node):
     def publish_data(self):
         # This function publish the data we want to record for external analysis
         
-        # ----------------- GRAPPLE_DATA ----------------------------------
+        # ----------------- Grapple data ----------------------------------
         msg = String()
         msg.data = f"State: {self.grapple_state}, Pos ref: {self.gra_motor_pos_ref}, Pos counts: {self.gra_motor_pos},Speed: {self.gra_motor_speed},Current Iq: {self.gra_motor_current}"
         self.pub_gra_motor_feedback.publish(msg)
 
         #Position Feedback
-        motor_pos_msg = Int32()
-        motor_pos_msg.data = self.gra_motor_pos
-        self.pub_gra_motor_pos.publish(motor_pos_msg)
+        grapple_motor_pos_msg = Int32()
+        grapple_motor_pos_msg.data = self.gra_motor_pos
+        self.pub_gra_motor_pos.publish(grapple_motor_pos_msg)
         
         #Velocity Feedback
-        motor_vel_msg = Int32()
-        motor_vel_msg.data = self.gra_motor_speed
-        self.pub_gra_motor_pos.publish(motor_vel_msg)
+        grapple_motor_vel_msg = Int32()
+        grapple_motor_vel_msg.data = self.gra_motor_speed
+        self.pub_gra_motor_vel.publish(grapple_motor_vel_msg)
         
         #Current Phase Iq Feedback
-        current_iq_msg = Float64()
-        current_iq_msg.data = self.gra_motor_current
-        self.pub_gra_motor_curr_iq.publish(current_iq_msg)
+        grapple_current_iq_msg = Float64()
+        grapple_current_iq_msg.data = self.gra_motor_current
+        self.pub_gra_motor_curr_iq.publish(grapple_current_iq_msg)
         
-        # ----------------- AVC_DATA ----------------------------------
+        # ----------------- AVC data -----------------------------------
         avc_msg = String()
         avc_msg.data = f"State: {self.avc_state}, Pos ref: {self.avc_motor_pos_ref}, Pos counts: {self.avc_motor_pos},Speed: {self.avc_motor_speed},Current Iq: {self.avc_motor_current}"
         self.pub_avc_motor_feedback.publish(avc_msg)
@@ -402,7 +408,7 @@ class GRASPNode(Node):
         #Velocity Feedback
         avc_motor_vel_msg = Int32()
         avc_motor_vel_msg.data = self.avc_motor_speed
-        self.pub_avc_motor_pos.publish(avc_motor_vel_msg)
+        self.pub_avc_motor_vel.publish(avc_motor_vel_msg)
         
         #Current Phase Iq Feedback
         avc_current_iq_msg = Float64()
@@ -722,9 +728,6 @@ class GRASPNode(Node):
                 if self.avc_motor_pos > -5:
                     self.get_logger().info('AVC returned to home position. Changing state to AVC_HOME.')
                     self.avc_state = 'AVC_HOMED'
-
-        # Publish data
-        self.publish_data()
         
 def main():
     rclpy.init()
