@@ -1,4 +1,4 @@
-GRASP_node: 
+/**: 
 
   ros__parameters:
 
@@ -16,8 +16,8 @@ GRASP_node:
       current_controller_ki: [0.014, 0.0158462]
       speed_controller_kp: [0.2, 0.0099868]
       speed_controller_ki: [0.004, 0.0029907]
-      position_controller_kp: [20, 2]
-      position_controller_ki: [0, 0.0099868]
+      position_controller_kp: [20.0, 2.0]
+      position_controller_ki: [0.0, 0.0099868]
       control_mode: [POSITION_MODE, POSITION_MODE]
       speed_limit: [4750, 4000]
       speed_acceleration: [100, 100]
