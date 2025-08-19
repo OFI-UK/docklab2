@@ -22,6 +22,27 @@ from enum import Enum, auto
 # Import Solo Motor Controller Library
 import SoloPy as solo # If solopy is not found in ROS2, need to run this before: 'export PYTHONPATH=/home/labpi/py_env/lib/python3.12/site-packages:$PYTHONPATH'
 
+# Enum classes for Grapple and AVC states
+class GrappleState(Enum):
+    IDLE = auto()
+    HOMING = auto()
+    HOME = auto()
+    OPEN = auto()
+    CAPTURING = auto()
+    HARD_DOCK = auto()
+    RELEASE = auto()
+    MORE = auto()
+    LESS = auto()
+
+class AVCState(Enum):
+    IDLE = auto()
+    HOME = auto()
+    HOMED = auto()
+    POS1 = auto()
+    POS1p5 = auto()
+    POS2 = auto()
+    RETURNING = auto()
+
 # Class definition for GRASP Node
 class GRASPNode(Node):
     # Constructor, initialises motors by calling the init definitions.
@@ -29,27 +50,6 @@ class GRASPNode(Node):
 
         # Set node name 
         super().__init__('GRASP_node')
-
-        # Declaring states for grapple and AVC
-        class GrappleState(Enum):
-            IDLE = auto()
-            HOMING = auto()
-            HOME = auto()
-            OPEN = auto()
-            CAPTURING = auto()
-            HARD_DOCK = auto()
-            RELEASE = auto()
-            MORE = auto()
-            LESS = auto()
-
-        class AVCState(Enum):
-            IDLE = auto()
-            HOME = auto()
-            HOMED = auto()
-            POS1 = auto()
-            POS1p5 = auto()
-            POS2 = auto()
-            RETURNING = auto()
 
         # Declaring parameters
         self.get_logger().debug('Declaring parameters for GRASP_node')
