@@ -25,7 +25,7 @@
       logger_level: [0, 0]
 
     feedback_params:
-      frequency: 10 # [Hz]
+      frequency: 10.0 # [Hz]
 
     state_machine_params:
-      frequency: 10 # [Hz]
+      frequency: 10.0 # [Hz]
