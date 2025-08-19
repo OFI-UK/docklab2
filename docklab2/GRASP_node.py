@@ -494,7 +494,7 @@ class GRASPNode(Node):
                     self.grapple_Solo.set_control_mode(solo.ControlMode.SPEED_MODE)
                     self.gra_motor_control_mode = "SPEED"
                     self.grapple_Solo.set_speed_reference(0)
-                    self.get_logger.info('Asked the motor to STOP by setting SPEED to zero.')
+                    self.get_logger().info('Asked the motor to STOP by setting SPEED to zero.')
                     self.grapple_state = 'IDLE'
                 elif control_mode == solo.ControlMode.TORQUE_MODE:
                     self.grapple_Solo.set_control_mode(solo.ControlMode.TORQUE_MODE)
@@ -506,7 +506,7 @@ class GRASPNode(Node):
                     self.grapple_Solo.set_control_mode(solo.ControlMode.SPEED_MODE)
                     self.gra_motor_control_mode = "SPEED"
                     self.grapple_Solo.set_speed_reference(0)
-                    self.get_logger.info('Asked the motor top STOP by setting SPEED to zero.')
+                    self.get_logger.info('Asked the motor to STOP by setting SPEED to zero.')
                 
                 self.grapple_state = 'IDLE'
 
