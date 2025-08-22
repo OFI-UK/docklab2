@@ -259,6 +259,26 @@ class GRASPNode(Node):
         """)
 
         return Solo
+
+    def motor_position_control(self, Solo, position_ref, speed_limit):
+        # This a function to request a specific position to the motor.
+        Solo.set_control_mode(solo.ControlMode.POSITION_MODE)
+        Solo.set_speed_limit(speed_limit)
+        self.get_logger().debug(f"Changing motor to position mode control and setting position reference {position_ref} with speed limit {speed_limit}")
+        Solo.set_position_reference(position_ref)
+
+    def motor_speed_control(self, Solo, speed_reference):
+        # This a function to request a specific speed to the motor.
+        Solo.set_control_mode(solo.ControlMode.SPEED_MODE)
+        if speed_reference < 0:
+            Solo.set_motor_direction(solo.Direction.CLOCKWISE)
+            speed_reference = abs(speed_reference)
+            self.get_logger().debug(f"Changing motor to speed mode control and setting speed reference {speed_reference} in CLOCKWISE direction")
+        else:
+            Solo.set_motor_direction(solo.Direction.COUNTERCLOCKWISE)
+            speed_reference = abs(speed_reference)
+            self.get_logger().debug(f"Changing motor to speed mode control and setting speed reference {speed_reference} in COUNTERCLOCKWISE direction")
+        Solo.set_speed_reference(speed_reference)
     
     # Debugging functions to interact directly with grapple motor for position, speed and torque control
     def grapple_motor_position_control(self, msg):
