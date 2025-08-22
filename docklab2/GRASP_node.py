@@ -57,6 +57,11 @@ class AVCState(Enum):
     RETRACTING = auto()
     RETRACTED = auto()
 
+    # Legacy state terms
+    HOMED = auto()
+    RETURNING = auto()
+    
+
 # Class definition for GRASP Node
 class GRASPNode(Node):
     # Constructor, initialises motors by calling the init definitions.
@@ -405,7 +410,7 @@ class GRASPNode(Node):
                     self.get_logger().warning("Failed to change grapple mode to 'SHIELDING' because previous state isn't 'HOME'. ")
                     return
                 self.grapple_state = GrappleState.SHIELDING
-                self.get_logger_info('Changed grapple state to SHIELDING.')
+                self.get_logger().info('Changed grapple state to SHIELDING.')
             case 'GO_OPEN':
                 # Send confirmation message
                 self.get_logger().info('Received command: GO_OPEN.')
@@ -414,7 +419,7 @@ class GRASPNode(Node):
                     self.get_logger().warning("Failed to change grapple mode to 'OPENING' because previous state isn't 'HOME' or 'SHIELDED'. ")
                     return
                 self.grapple_state = GrappleState.OPENING
-                self.get_logger_info('Changed grapple state to OPENING.')
+                self.get_logger().info('Changed grapple state to OPENING.')
             case 'GO_DOCK':
                 # Send confirmation message
                 self.get_logger().info('Received command: GO_DOCK. Grapple will execute soft dock followed by hard dock.')
@@ -423,7 +428,7 @@ class GRASPNode(Node):
                     self.get_logger().warning("Failed to change grapple mode to 'SOFT_DOCKING' because previous state isn't 'OPEN'. ")
                     return
                 self.grapple_state = GrappleState.SOFT_DOCKING
-                self.get_logger_info('Changed grapple state to SOFT_DOCKING.')
+                self.get_logger().info('Changed grapple state to SOFT_DOCKING.')
             case 'GO_RELEASE':
                 # Send confirmation message
                 self.get_logger().info('Received command: GO_RELEASE.')
@@ -432,7 +437,7 @@ class GRASPNode(Node):
                     self.get_logger().warning("Failed to change grapple mode to 'RELEASING' because previous state isn't 'HARD_DOCK'. ")
                     return
                 self.grapple_state = GrappleState.RELEASING
-                self.get_logger_info('Changed grapple state to RELEASING.')
+                self.get_logger().info('Changed grapple state to RELEASING.')
 
             # Testing and debugging flags
             case 'STOP':
@@ -601,7 +606,7 @@ class GRASPNode(Node):
                 target_speed = 4750 # [QPS] Configuration parameter to be added to config file at later date.
                 self.motor_speed_control(self.grapple_Solo, target_speed)
                 # State exit condition
-                if self.gra_motor_pos >= -5000: # [QP] Configuration parameter to be added to config file at later date.
+                if self.gra_motor_pos >= -10000: # [QP] Configuration parameter to be added to config file at later date. Need to find what this value is from Rhys and Palash
                     self.get_logger().debug('Position target for grapple soft docking reached.')
                     self.grapple_state = GrappleState.SOFT_DOCK
                     self.get_logger().info('Changed grapple state to SOFT_DOCK.')
