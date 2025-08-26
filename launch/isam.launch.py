@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Code for launching Air Bearing Platform 1 (ABP1)
+# Code for launching GRASP at ISAM Facility (OFL)
 from launch import LaunchDescription
 from launch_ros.actions import Node
 from launch.substitutions import PathJoinSubstitution
@@ -17,5 +17,6 @@ def generate_launch_description():
             parameters=[PathJoinSubstitution([
                 FindPackageShare('docklab2'), 'config', 'params.yaml'])
             ],
+            arguments=[('__log_level:=debug')],
         )
     ])

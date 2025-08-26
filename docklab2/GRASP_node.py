@@ -153,7 +153,8 @@ class GRASPNode(Node):
         while ports_found == 0:
             ports_searched = glob.glob('/dev/ttyACM[0-9]*')
             ports_found = len(ports_searched)
-            self.get_logger().debug('No serial devices found. Awaiting connection.')
+            if ports_found == 0:
+                self.get_logger().info('No serial devices found. Awaiting connection.')
             time.sleep(1)
         available_ports = []
         for port in ports_searched:
@@ -161,7 +162,7 @@ class GRASPNode(Node):
                 s = serial.Serial(port)
                 s.close()
                 available_ports.append(str(port))
-                self.get_logger().debug(f"Found a device active on: {port}")
+                self.get_logger().info(f"Found a device active on: {port}")
             except:
                 pass
         return available_ports
