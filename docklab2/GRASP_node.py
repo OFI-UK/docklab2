@@ -531,6 +531,7 @@ class GRASPNode(Node):
         self.gra_motor_pos_ref, error = self.grapple_Solo.get_position_reference()
         self.gra_motor_speed_ref, error = self.grapple_Solo.get_speed_reference()
         self.gra_motor_torque_ref, error = self.grapple_Solo.get_torque_reference_iq()
+        self.gra_motor_control_mode, error = self.grapple_Solo.get_control_mode()
         self.gra_motor_pos, error     = self.grapple_Solo.get_position_counts_feedback()
         self.gra_motor_speed, error   = self.grapple_Solo.get_speed_feedback()
         self.gra_motor_current, error = self.grapple_Solo.get_quadrature_current_iq_feedback()
@@ -538,6 +539,7 @@ class GRASPNode(Node):
         self.avc_motor_pos_ref, error = self.avc_Solo.get_position_reference()
         self.avc_motor_speed_ref, error = self.avc_Solo.get_speed_reference()
         self.avc_motor_torque_ref, error = self.avc_Solo.get_torque_reference_iq()
+        self.avc_motor_control_mode, error = self.avc_Solo.get_control_mode()
         self.avc_motor_pos, error     = self.avc_Solo.get_position_counts_feedback()
         self.avc_motor_speed, error   = self.avc_Solo.get_speed_feedback()
         self.avc_motor_current, error = self.avc_Solo.get_quadrature_current_iq_feedback()
@@ -556,7 +558,8 @@ class GRASPNode(Node):
             case GrappleState.HOMING:
                 '''Active state. Grapple mechanisms moving towards fully retracted position.'''
                 target_iq = 2 # [A] Configuration parameter to be added to config file at later date.
-                self.motor_torque_control(self.grapple_Solo, target_iq)
+                if self.gra_motor_torque_ref != target_iq or self.gra_motor_control_mode != solo.ControlMode.TORQUE_MODE:
+                    self.motor_torque_control(self.grapple_Solo, target_iq)
                 # State exit condition
                 if abs(self.gra_motor_current) >= target_iq:
                     self.get_logger().debug('Current target for grapple homing reached.')
@@ -588,7 +591,8 @@ class GRASPNode(Node):
             case GrappleState.OPENING:
                 '''Active state. Grapple mechanisms moving to open position.'''
                 target_pos = -41000 # [QP] Configuration parameter to be added to config file at later date.
-                self.motor_position_control(self.grapple_Solo, target_pos)
+                if self.gra_motor_pos_ref != target_pos or self.gra_motor_control_mode != solo.ControlMode.POSITION_MODE:
+                    self.motor_position_control(self.grapple_Solo, target_pos)
                 # State exit condition
                 if self.gra_motor_pos <= target_pos:
                     self.get_logger().debug('Position target for grapple opening reached.')
@@ -604,7 +608,8 @@ class GRASPNode(Node):
             case GrappleState.SOFT_DOCKING:
                 '''Active state. Grapple mechanisms moving to soft dock position.'''
                 target_speed = 4750 # [QPS] Configuration parameter to be added to config file at later date.
-                self.motor_speed_control(self.grapple_Solo, target_speed)
+                if self.gra_motor_speed_ref != target_speed or self.gra_motor_control_mode != solo.ControlMode.SPEED_MODE:
+                    self.motor_speed_control(self.grapple_Solo, target_speed)
                 # State exit condition
                 if self.gra_motor_pos >= -10000: # [QP] Configuration parameter to be added to config file at later date. Need to find what this value is from Rhys and Palash
                     self.get_logger().debug('Position target for grapple soft docking reached.')
@@ -615,11 +620,13 @@ class GRASPNode(Node):
                 '''Active state. Grapple mechanisms have reached soft dock position. Chance for error checking and correction with possible abort.'''
                 # Abort not currently implemented. Placeholder for future code.
                 self.grapple_state = GrappleState.HARD_DOCKING
+                self.get_logger().info('Changed grapple state to HARD_DOCKING.')
                 
             case GrappleState.HARD_DOCKING:
                 '''Active state. Grapple mechanisms moving to hard dock position.'''
                 target_iq = 2 # [A] Configuration parameter to be added to config file at later date.
-                self.motor_torque_control(self.grapple_Solo, target_iq)
+                if self.gra_motor_torque_ref != target_iq or self.gra_motor_control_mode != solo.ControlMode.TORQUE_MODE:
+                    self.motor_torque_control(self.grapple_Solo, target_iq)
                 # State exit condition
                 if abs(self.gra_motor_current) >= target_iq:
                     self.get_logger().debug('Current target for grapple hard docking reached.')
@@ -634,7 +641,8 @@ class GRASPNode(Node):
             case GrappleState.RELEASING:
                 '''Active state. Grapple mechanisms moving to release docked object.'''
                 target_pos = -41000 # [QP] Configuration parameter to be added to config file
-                self.motor_position_control(self.grapple_Solo, target_pos)
+                if self.gra_motor_pos_ref != target_pos or self.gra_motor_control_mode != solo.ControlMode.POSITION_MODE:
+                    self.motor_position_control(self.grapple_Solo, target_pos)
                 # State exit condition
                 if self.gra_motor_pos <= target_pos:
                     self.get_logger().debug('Position target for grapple releasing reached.')
