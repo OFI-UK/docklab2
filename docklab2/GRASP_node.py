@@ -24,6 +24,8 @@ import SoloPy as solo # If solopy is not found in ROS2, need to run this before:
 
 # Enum classes for Grapple and AVC states
 class GrappleState(Enum):
+    ABORTING = auto()
+    ABORT = auto()
     LAUNCH_LOCKED = auto()
     IDLE = auto()
     HOMING = auto()
@@ -547,6 +549,22 @@ class GRASPNode(Node):
 
         # Checking grapple states and calling relevant code
         match self.grapple_state:
+            case GrappleState.ABORTING:
+                '''Active state. Grapple mechanisms moving to abort position.'''
+                target_pos = -41000 # [QP] Configuration parameter to be added to config file at later date.
+                if self.gra_motor_pos_ref != target_pos or self.gra_motor_control_mode != solo.ControlMode.POSITION_MODE:
+                    self.motor_position_control(self.grapple_Solo, target_pos)
+                # State exit condition
+                if self.gra_motor_pos <= target_pos:
+                    self.get_logger().debug('Position target for grapple abort reached.')
+                    self.grapple_state = GrappleState.ABORT
+                    self.get_logger().info('Changed grapple state to ABORT.')
+
+            case GrappleState.ABORT:
+                '''Passive state. Grapple mechanisms have aborted movement. Awaiting external flags.'''
+                # Setting motor torque to 0 to stop motor
+                self.motor_torque_control(self.grapple_Solo, 0)
+
             case GrappleState.LAUNCH_LOCKED:
                 '''Passive state. Grapple mechanisms locked for launch. Awaiting external flags.'''
                 # Launch locking not currently implemented. Placeholder for future code.
@@ -612,6 +630,11 @@ class GRASPNode(Node):
                 if self.gra_motor_speed_ref != target_speed or self.gra_motor_control_mode != solo.ControlMode.SPEED_MODE:
                     self.motor_speed_control(self.grapple_Solo, target_speed)
                 # State exit condition
+                abort_iq = 1.0 # [A] Configuration parameter to be added to config file at later date.
+                if abort_iq <= abs(self.gra_motor_current): 
+                    self.get_logger().debug('Current threshold for dock abort reached.')
+                    self.grapple_state = GrappleState.ABORTING
+                    self.get_logger().info('Changed grapple state to ABORTING.')
                 if self.gra_motor_pos >= -10000: # [QP] Configuration parameter to be added to config file at later date. Need to find what this value is from Rhys and Palash
                     self.get_logger().debug('Position target for grapple soft docking reached.')
                     self.grapple_state = GrappleState.SOFT_DOCK
