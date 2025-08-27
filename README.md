@@ -59,9 +59,13 @@ YYYYYYYY is the password for the router
  - Add "source py_env/bin/activate" to .bashrc file in home directory to source python environment on start up of the terminal 
  
 # Serial setup instructions
- - Execute "sudo chmod 666 /dev/ttyACM0" to enable opening serial port ttyACM0. This port may change if there is need to use serial comms with hardware other than the Teensy 4.1 
+ - To enable using serial ports add user to dialout group as below:
+ """
+sudo apt install rpi.gpio-common
+sudo adduser "${USER}" dialout
+sudo reboot
 
- # GPIO setup instructions
+# GPIO setup instructions
   - To enable using GPIO over ssh add user to dialout group as below:
 """
 sudo apt install rpi.gpio-common
@@ -70,8 +74,8 @@ sudo reboot
 
 # Solo Motor Controller Setup 
  - Install SoloPy here: https://github.com/Solo-FL/SoloPy.git
- - AVC device address: 0
- - Grapple device address: 1
+ - AVC device address: 3
+ - Grapple device address: 7
 
 # LabJack Setup Instructions
  - Follow instructions for downloading LabJack for python here: https://support.labjack.com/docs/python-for-ljm-windows-mac-linux

@@ -25,6 +25,7 @@ import SoloPy as solo # If solopy is not found in ROS2, need to run this before:
 
 # Enum classes for Grapple and AVC states
 class GrappleState(Enum):
+    """Enumeration of possible states for the grapple mechanism."""
     ERROR = auto()
     ABORTING = auto()
     ABORT = auto()
@@ -44,6 +45,7 @@ class GrappleState(Enum):
     RELEASE = auto()
 
 class AVCState(Enum):
+    """Enumeration of possible states for the AVC mechanism."""
     ERROR = auto()
     LAUNCH_LOCKED = auto()
     IDLE = auto()
@@ -69,7 +71,10 @@ class AVCState(Enum):
 
 # Class definition for GRASP Nodeavc
 class GRASPNode(Node):
-    # Constructor, initialises motors by calling the init definitions.
+    """
+    ROS2 Node for controlling GRASP and AVC mechanisms via Solo motor controllers.
+    Handles state machines, motor initialization, feedback publishing, and command subscriptions.
+    """
     def __init__(self):
 
         # Set node name 
@@ -168,6 +173,11 @@ class GRASPNode(Node):
 
     # Function to find available serial ports
     def find_available_ports(self):
+        """
+        Search for available serial devices and return a list of active ports.
+        Returns:
+            list: List of available serial port device paths.
+        """
         # Search for available serial devices. 
         self.get_logger().info('Running a search for available serial devices')
         ports_found = 0
@@ -190,6 +200,15 @@ class GRASPNode(Node):
 
     # Function for initialising motor
     def motor_init(self, name):
+        """
+        Initialize a Solo motor controller for the given motor name using parameters.
+        Args:
+            name (str): Name of the motor ('grapple' or 'avc').
+        Returns:
+            SoloMotorControllerUart: Initialized Solo motor controller object.
+        Raises:
+            Exception: If the motor driver cannot be found on any available port.
+        """
         # Get parameters for initialising motor 
         self.get_logger().info(f'Initializing {name} motor driver')
         # Get the parameter index for the motor name
@@ -303,6 +322,12 @@ class GRASPNode(Node):
         return Solo
 
     def motor_position_control(self, Solo, position_reference):
+        """
+        Set the motor to position mode and command it to the specified position.
+        Args:
+            Solo: Solo motor controller object.
+            position_reference (float): Target position value.
+        """
         # This a function to request a specific position to the motor.
         Solo.set_control_mode(solo.ControlMode.POSITION_MODE)
         self.get_logger().debug(f"Changing motor to position mode control and setting position reference {position_reference}")
@@ -310,6 +335,12 @@ class GRASPNode(Node):
         return
 
     def motor_speed_control(self, Solo, speed_reference):
+        """
+        Set the motor to speed mode and command it to the specified speed.
+        Args:
+            Solo: Solo motor controller object.
+            speed_reference (float): Target speed value.
+        """
         # This a function to request a specific speed to the motor.
         Solo.set_control_mode(solo.ControlMode.SPEED_MODE)
         if speed_reference < 0:
@@ -324,6 +355,12 @@ class GRASPNode(Node):
         return
 
     def motor_torque_control(self, Solo, torque_reference):
+        """
+        Set the motor to torque mode and command it to the specified torque.
+        Args:
+            Solo: Solo motor controller object.
+            torque_reference (float): Target torque value.
+        """
         # This a function to request a specific torque to the motor.
         Solo.set_control_mode(solo.ControlMode.TORQUE_MODE)
         if torque_reference < 0:
@@ -339,6 +376,9 @@ class GRASPNode(Node):
     
     # Function to publish data into topics
     def publish_data(self):
+        """
+        Publish feedback data for Grapple and AVC motors to their respective ROS topics.
+        """
         # This function publish the data we want to record for external analysis
         
         # ----------------- Grapple data ----------------------------------
@@ -385,41 +425,74 @@ class GRASPNode(Node):
     
     # Debugging functions to interact directly with grapple motor for position, speed and torque control
     def grapple_motor_position_control(self, msg):
+        """
+        Callback for grapple motor position command subscription.
+        Args:
+            msg (Float64): ROS message containing position command.
+        """
         self.get_logger().info(f"Received grapple position command: {msg.data}")
         self.motor_position_control(self.grapple_Solo, msg.data)
         return
 
     def grapple_motor_speed_control(self, msg):
+        """
+        Callback for grapple motor speed command subscription.
+        Args:
+            msg (Float64): ROS message containing speed command.
+        """
         self.get_logger().info(f"Received grapple speed command: {msg.data}")
         self.motor_speed_control(self.grapple_Solo, msg.data)
         return
     
     def grapple_motor_torque_control(self, msg):
+        """
+        Callback for grapple motor torque command subscription.
+        Args:
+            msg (Float64): ROS message containing torque command.
+        """
         self.get_logger().info(f"Received grapple torque command: {msg.data}")
         self.motor_torque_control(self.grapple_Solo, msg.data)
         return
         
     # Debugging functions to interact directly with AVC motor for position, speed and torque control
     def avc_motor_position_control(self, msg):
+        """
+        Callback for AVC motor position command subscription.
+        Args:
+            msg (Float64): ROS message containing position command.
+        """
         self.get_logger().info(f"Received AVC position command: {msg.data}")
         self.motor_position_control(self.avc_Solo, msg.data)
         return
     
     def avc_motor_speed_control(self, msg):
+        """
+        Callback for AVC motor speed command subscription.
+        Args:
+            msg (Float64): ROS message containing speed command.
+        """
         self.get_logger().info(f"Received AVC speed command: {msg.data}")
         self.motor_speed_control(self.avc_Solo, msg.data)
         return
     
     def avc_motor_torque_control(self, msg):
+        """
+        Callback for AVC motor torque command subscription.
+        Args:
+            msg (Float64): ROS message containing torque command.
+        """
         self.get_logger().info(f"Received AVC torque command: {msg.data}")
         self.motor_torque_control(self.avc_Solo, msg.data)
         return
         
     # EXTERNAL FLAG MANAGEMENT  
     def GRASP_external_flags(self, msg):
-        '''This function runs when we receive an external flag through the topic /GRASP_flags
-           This means that this code does not run in a loop. It's only triggered with the flags, like an interruption. 
-           We will first match the received flag and then perform the associated actions.'''
+        """
+        Callback for external flag commands received via the /GRASP_flags topic.
+        Handles state transitions and motor actions based on received flag.
+        Args:
+            msg (String): ROS message containing the external flag command.
+        """
         flag = msg.data   
         match flag:
             # Grapple related flags
@@ -559,6 +632,10 @@ class GRASPNode(Node):
                 
     # STATE MACHINE CODE
     def GRASP_state_machine(self):
+        """
+        Periodic state machine handler for Grapple and AVC mechanisms.
+        Updates motor states and executes state-dependent actions.
+        """
 
         # Get the current state from Solo controllers
         if self.grapple_state != GrappleState.ERROR:
@@ -671,7 +748,7 @@ class GRASPNode(Node):
                     self.get_logger().debug('Current threshold for dock abort reached.')
                     self.grapple_state = GrappleState.ABORTING
                     self.get_logger().info('Changed grapple state to ABORTING.')
-                if self.gra_motor_pos >= -10000: # [QP] Configuration parameter to be added to config file at later date. Need to find what this value is from Rhys and Palash
+                if self.gra_motor_pos >= -39504: # [QP] Configuration parameter to be added to config file at later date. Need to find what this value is from Rhys and Palash
                     self.get_logger().debug('Position target for grapple soft docking reached.')
                     self.grapple_state = GrappleState.SOFT_DOCK
                     self.get_logger().info('Changed grapple state to SOFT_DOCK.')
@@ -684,14 +761,15 @@ class GRASPNode(Node):
                 
             case GrappleState.HARD_DOCKING:
                 '''Active state. Grapple mechanisms moving to hard dock position.'''
-                target_iq = 2 # [A] Configuration parameter to be added to config file at later date.
-                if self.gra_motor_torque_ref != target_iq or self.gra_motor_control_mode != solo.ControlMode.TORQUE_MODE:
-                    self.motor_torque_control(self.grapple_Solo, target_iq)
-                # State exit condition
-                if abs(self.gra_motor_current) >= target_iq:
-                    self.get_logger().debug('Current target for grapple hard docking reached.')
-                    self.grapple_state = GrappleState.HARD_DOCK
-                    self.get_logger().info('Changed grapple state to HARD_DOCK.')
+                if self.gra_motor_pos >= -10000: # [QP] Configuration parameter to be added to config file at later date.
+                    target_iq = 2 # [A] Configuration parameter to be added to config file at later date.
+                    if self.gra_motor_torque_ref != target_iq or self.gra_motor_control_mode != solo.ControlMode.TORQUE_MODE:
+                        self.motor_torque_control(self.grapple_Solo, target_iq)
+                    # State exit condition
+                    if abs(self.gra_motor_current) >= target_iq:
+                        self.get_logger().debug('Current target for grapple hard docking reached.')
+                        self.grapple_state = GrappleState.HARD_DOCK
+                        self.get_logger().info('Changed grapple state to HARD_DOCK.')
 
             case GrappleState.HARD_DOCK:
                 '''Passive state. Grapple mechanisms have reached hard dock position. Awaiting external flags.'''
@@ -753,6 +831,10 @@ class GRASPNode(Node):
                     self.avc_state = AVCState.HOMED
         
 def main():
+    """
+    Main entry point for the GRASP_node ROS2 node.
+    Initializes ROS, creates the node, and spins until shutdown.
+    """
     rclpy.init()
     GRASP_node = GRASPNode()
     rclpy.spin(GRASP_node)
