@@ -103,7 +103,7 @@ class BaseNode(Node):
                 # Start recording to rosbag "docking" + date and time in YYYYMMDDHHMMSS format
                 filename = ' docking_' + time.strftime('%Y%m%d%H%M%S')
                 print(f'Recording to file: {filename}')
-                command = 'ros2 bag record --output ' + filename + ' /abp12_deltapitch /abp12_deltaroll /abp12_deltax /abp12_deltay /abp12_deltayaw /abp12_deltaz /abp1_pose /abp2_pose /abp1/gra_motor_current_iq /abp1/gra_motor_pos /abp1/gra_motor_vel'
+                command = 'ros2 bag record --output ' + filename + ' /abp12_deltapitch /abp12_deltaroll /abp12_deltax /abp12_deltay /abp12_deltayaw /abp12_deltaz /abp1_pose /abp2_pose /abp1/gra_motor_current_iq /abp1/gra_motor_pos /abp1/gra_motor_vel /abp1/gra_motor_feedback'
                 self.bagprocess = subprocess.Popen([command], stdin=subprocess.PIPE, shell=True, cwd="/home/labpi/docklab2_ws/bag_files", executable='/bin/bash')
 
                 # Run docking procedure
@@ -152,7 +152,7 @@ class BaseNode(Node):
                 # Start recording to rosbag "docking" + date and time in YYYYMMDDHHMMSS format
                 filename = ' undocking_' + time.strftime('%Y%m%d%H%M%S')
                 print(f'Recording to file: {filename}')
-                command = 'ros2 bag record --output ' + filename + ' /abp12_deltapitch /abp12_deltaroll /abp12_deltax /abp12_deltay /abp12_deltayaw /abp12_deltaz /abp1_pose /abp2_pose /abp1/gra_motor_current_iq /abp1/gra_motor_pos /abp1/gra_motor_vel'
+                command = 'ros2 bag record --output ' + filename + ' /abp12_deltapitch /abp12_deltaroll /abp12_deltax /abp12_deltay /abp12_deltayaw /abp12_deltaz /abp1_pose /abp2_pose /abp1/gra_motor_current_iq /abp1/gra_motor_pos /abp1/gra_motor_vel /abp1/gra_motor_feedback'
                 self.bagprocess = subprocess.Popen([command], stdin=subprocess.PIPE, shell=True, cwd="/home/labpi/docklab2_ws/bag_files", executable='/bin/bash')
 
                 # Run undocking procedure
@@ -179,7 +179,7 @@ class BaseNode(Node):
                 filename = 'recording_' + time.strftime('%Y%m%d%H%M%S')
                 # Print name of file to be recorded
                 print(f'Recording to file: {filename}')
-                command = 'ros2 bag record --output ' + filename + ' /abp12_deltapitch /abp12_deltaroll /abp12_deltax /abp12_deltay /abp12_deltayaw /abp12_deltaz /abp1_pose /abp2_pose /abp1/gra_motor_current_iq /abp1/gra_motor_pos /abp1/gra_motor_vel'
+                command = 'ros2 bag record --output ' + filename + ' /abp12_deltapitch /abp12_deltaroll /abp12_deltax /abp12_deltay /abp12_deltayaw /abp12_deltaz /abp1_pose /abp2_pose /abp1/gra_motor_current_iq /abp1/gra_motor_pos /abp1/gra_motor_vel /abp1/gra_motor_feedback'
                 self.bagprocess = subprocess.Popen([command], stdin=subprocess.PIPE, shell=True, cwd="/home/labpi/docklab2_ws/bag_files", executable='/bin/bash')
                 print(f'Recording started: {filename}')
                 # Delay for recording
