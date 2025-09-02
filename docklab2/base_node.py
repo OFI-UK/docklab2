@@ -106,6 +106,9 @@ class BaseNode(Node):
                 command = 'ros2 bag record --output ' + filename + ' /abp12_deltapitch /abp12_deltaroll /abp12_deltax /abp12_deltay /abp12_deltayaw /abp12_deltaz /abp1_pose /abp2_pose /abp1/gra_motor_current_iq /abp1/gra_motor_pos /abp1/gra_motor_vel /abp1/gra_motor_feedback'
                 self.bagprocess = subprocess.Popen([command], stdin=subprocess.PIPE, shell=True, cwd="/home/labpi/docklab2_ws/bag_files", executable='/bin/bash')
 
+                # Wait a couple of seconds to allow rosbag to start properly
+                time.sleep(3)
+                
                 # Run docking procedure
                 # Start air bearings
                 self.abp2_airb_req.data = True
