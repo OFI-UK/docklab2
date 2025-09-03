@@ -43,6 +43,7 @@ class GrappleState(Enum):
     HARD_DOCK = auto()
     RELEASING = auto()
     RELEASE = auto()
+    PAUSED = auto() 
 
 class AVCState(Enum):
     """Enumeration of possible states for the AVC mechanism."""
@@ -67,7 +68,15 @@ class AVCState(Enum):
     # Legacy state terms
     HOMED = auto()
     RETURNING = auto()
-    
+
+class ISAMState(Enum):
+    """Enumeration of possible states for ISAM facility"""
+    INIT = auto()
+    DISABLED = auto()
+    IDLE = auto()
+    INITIAL_CONDITIONS_STAGING = auto()
+    INITIAL_CONDITIONS_RUNNING = auto()
+    CONTACT_DYNAMICS_RUNNING = auto()
 
 # Class definition for GRASP Nodeavc
 class GRASPNode(Node):
@@ -120,21 +129,25 @@ class GRASPNode(Node):
         try:
             self.grapple_Solo = self.motor_init('grapple')
             self.grapple_state = GrappleState.IDLE
+            self.grapple_homed = False
             self.get_logger().info("Grapple set to IDLE")
         except Exception as e:
             self.get_logger().warning(f"Failed to initialize grapple motor: {e}")
             self.grapple_state = GrappleState.ERROR
             self.grapple_Solo = None
+            self.grapple_homed = False
             self.get_logger().info("Grapple set to ERROR")
 
         try:
             self.avc_Solo = self.motor_init('avc')
             self.avc_state = AVCState.IDLE
+            self.avc_homed = False
             self.get_logger().info('AVC set to IDLE')
         except Exception as e:
             self.get_logger().warning(f"Failed to initialize AVC motor: {e}")
             self.avc_state = AVCState.ERROR
             self.avc_Solo = None
+            self.avc_homed = False
             self.get_logger().info('AVC set to ERROR')
 
         # Set up a function that constantly monitors the state machine
@@ -155,7 +168,14 @@ class GRASPNode(Node):
             self.subscription           = self.create_subscription(Float64,'avc_motor/position_cmd',     self.avc_motor_position_control,10)
             self.subscription           = self.create_subscription(Float64,'avc_motor/velocity_cmd',     self.avc_motor_speed_control,10)
             self.subscription           = self.create_subscription(Float64,'avc_motor/torque_cmd',       self.avc_motor_torque_control,10)
+        
+        # Add ISAM Facility topic subscriber
+        self.subscription               = self.create_subscription(String, '/single/orbitfab_command/fsm_state', self.ISAM_fsm_state_callback, 10)
+
         self.subscription # prevent unused variable error
+
+        self.isam_state = ISAMState.IDLE
+        self.isam_state_prev = self.isam_state
         
         # Add GRASP publishers
         if self.grapple_state != GrappleState.ERROR:
@@ -509,8 +529,11 @@ class GRASPNode(Node):
                 # Send confirmation message
                 self.get_logger().info('Received command: GO_SHIELDED.')
                 # Check for previous state. Cannot transition to SHIELDED without previous state being HOME.
-                if self.grapple_state != GrappleState.HOME:
-                    self.get_logger().warning("Failed to change grapple mode to 'SHIELDING' because previous state isn't 'HOME'. ")
+                if self.grapple_homed == False:
+                    self.get_logger().warning("Failed to change grapple mode to 'SHIELDING' because mechanism has not been homed. ")
+                    return
+                if self.grapple_state != GrappleState.HOME and self.grapple_state != GrappleState.PAUSED:
+                    self.get_logger().warning("Failed to change grapple mode to 'SHIELDING' because previous state isn't 'HOME' or 'PAUSED'. ")
                     return
                 self.grapple_state = GrappleState.SHIELDING
                 self.get_logger().info('Changed grapple state to SHIELDING.')
@@ -518,8 +541,11 @@ class GRASPNode(Node):
                 # Send confirmation message
                 self.get_logger().info('Received command: GO_OPEN.')
                 # Check for previous state. Cannot transition to OPEN without previous state being HOME or SHIELDED.
-                if self.grapple_state != GrappleState.HOME and self.grapple_state != GrappleState.SHIELDED:
-                    self.get_logger().warning("Failed to change grapple mode to 'OPENING' because previous state isn't 'HOME' or 'SHIELDED'. ")
+                if self.grapple_homed != True:
+                    self.get_logger().warning("Failed to change grapple mode to 'OPENING' because mechanism has not been homed. ")
+                    return
+                if self.grapple_state != GrappleState.HOME and self.grapple_state != GrappleState.SHIELDED and self.grapple_state != GrappleState.PAUSED:
+                    self.get_logger().warning("Failed to change grapple mode to 'OPENING' because previous state isn't 'HOME', 'SHIELDED', or 'PAUSED'. ")
                     return
                 self.grapple_state = GrappleState.OPENING
                 self.get_logger().info('Changed grapple state to OPENING.')
@@ -527,8 +553,11 @@ class GRASPNode(Node):
                 # Send confirmation message
                 self.get_logger().info('Received command: GO_DOCK. Grapple will execute soft dock followed by hard dock.')
                 # Check for previous state. Cannot transition to SOFT_DOCKING without previous state being OPEN
-                if self.grapple_state != GrappleState.OPEN:
-                    self.get_logger().warning("Failed to change grapple mode to 'SOFT_DOCKING' because previous state isn't 'OPEN'. ")
+                if self.grapple_homed != True:
+                    self.get_logger().warning("Failed to change grapple mode to 'SOFT_DOCKING' because mechanism has not been homed. ")
+                    return
+                if self.grapple_state != GrappleState.OPEN and self.grapple_state != GrappleState.PAUSED:
+                    self.get_logger().warning("Failed to change grapple mode to 'SOFT_DOCKING' because previous state isn't 'OPEN' or 'PAUSED'. ")
                     return
                 self.grapple_state = GrappleState.SOFT_DOCKING
                 self.get_logger().info('Changed grapple state to SOFT_DOCKING.')
@@ -536,18 +565,20 @@ class GRASPNode(Node):
                 # Send confirmation message
                 self.get_logger().info('Received command: GO_RELEASE.')
                 # Check for previous state. Cannot transition to RELEASING without previous state being HARD_DOCK
-                if self.grapple_state != GrappleState.HARD_DOCK:
-                    self.get_logger().warning("Failed to change grapple mode to 'RELEASING' because previous state isn't 'HARD_DOCK'. ")
+                if self.grapple_homed != True:
+                    self.get_logger().warning("Failed to change grapple mode to 'RELEASING' because mechanism has not been homed. ")
+                    return
+                if self.grapple_state != GrappleState.HARD_DOCK and self.grapple_state != GrappleState.PAUSED:
+                    self.get_logger().warning("Failed to change grapple mode to 'RELEASING' because previous state isn't 'HARD_DOCK' or 'PAUSED'. ")
                     return
                 self.grapple_state = GrappleState.RELEASING
                 self.get_logger().info('Changed grapple state to RELEASING.')
 
             # Testing and debugging flags
             case 'STOP':
-                self.get_logger().warning('Received command: STOP. Stopping grapple motor immediately.')
-                self.motor_torque_control(self.grapple_Solo, 0)           
-                self.grapple_state = GrappleState.IDLE
-                self.get_logger().info('Changed grapple state to IDLE.')
+                self.get_logger().warning('Received command: STOP. Stopping grapple motor immediately.')       
+                self.grapple_state = GrappleState.PAUSED
+                self.get_logger().info('Changed grapple state to PAUSED.')
 
             # AVC related flags
             case 'GO_AVC_HOMING':
@@ -629,7 +660,48 @@ class GRASPNode(Node):
             case _: # Catch invalid command 
                 self.get_logger().error('Unknown GRASP command received')
 
-                
+    # ISAM Facility
+    def ISAM_fsm_state_callback(self, msg):
+        """
+        Callback for ISAM facility FSM state updates.
+        Args:
+            msg (String): ROS message containing the ISAM FSM state.
+        """
+        fsm_state = msg.data
+        match fsm_state:
+            case 'INIT':
+                self.isam_state = ISAMState.INIT
+                if self.isam_state != self.isam_state_prev:
+                    self.get_logger().info('ISAM state transitioned to INIT')
+            case 'DISABLED':        
+                self.isam_state = ISAMState.DISABLED
+                if self.isam_state != self.isam_state_prev:
+                    self.get_logger().info('ISAM state transitioned to DISABLED')
+                    self.grapple_state = GrappleState.PAUSED
+                    self.get_logger().info('Changed grapple state to PAUSED.')
+            case 'IDLE':
+                self.isam_state = ISAMState.IDLE
+                if self.isam_state != self.isam_state_prev:
+                    self.get_logger().info('ISAM state transitioned to IDLE')
+            case 'INITIAL CONDITIONS STAGING':
+                self.isam_state = ISAMState.INITIAL_CONDITIONS_STAGING
+                if self.isam_state != self.isam_state_prev:
+                    self.get_logger().info('ISAM state transitioned to INITIAL CONDITIONS STAGING')
+            case 'INITIAL CONDITIONS RUNNING':
+                self.isam_state = ISAMState.INITIAL_CONDITIONS_RUNNING
+                if self.isam_state != self.isam_state_prev:
+                    self.get_logger().info('ISAM state transitioned to INITIAL CONDITIONS RUNNING')
+                    self.grapple_state = GrappleState.SOFT_DOCKING
+                    self.get_logger().info('Changed grapple state to SOFT_DOCKING.')
+            case 'CONTACT DYNAMICS RUNNING':
+                self.isam_state = ISAMState.CONTACT_DYNAMICS_RUNNING
+                if self.isam_state != self.isam_state_prev:
+                    self.get_logger().info('ISAM state transitioned to CONTACT DYNAMICS RUNNING')
+            case _: # Catch invalid command
+                self.get_logger().error('Unknown ISAM state received')
+        self.isam_state_prev = self.isam_state 
+
+
     # STATE MACHINE CODE
     def GRASP_state_machine(self):
         """
@@ -702,6 +774,7 @@ class GRASPNode(Node):
                     self.grapple_Solo.reset_position_to_zero()
                     self.grapple_Solo.set_position_reference(0)
                     self.grapple_state = GrappleState.HOME
+                    self.grapple_homed = True
                     self.get_logger().info('Changed grapple state to HOME.')
 
             case GrappleState.HOME:
@@ -778,7 +851,7 @@ class GRASPNode(Node):
 
             case GrappleState.RELEASING:
                 '''Active state. Grapple mechanisms moving to release docked object.'''
-                target_pos = -41000 # [QP] Configuration parameter to be added to config file
+                target_pos = -41500 # [QP] Configuration parameter to be added to config file
                 if self.gra_motor_pos_ref != target_pos or self.gra_motor_control_mode != solo.ControlMode.POSITION_MODE:
                     self.motor_position_control(self.grapple_Solo, target_pos)
                 # State exit condition
@@ -789,6 +862,11 @@ class GRASPNode(Node):
 
             case GrappleState.RELEASE:
                 '''Passive state. Grapple mechanisms have released docked object. Awaiting external flags.'''
+                # Setting motor torque to 0 to stop motor
+                self.motor_torque_control(self.grapple_Solo, 0)
+            
+            case GrappleState.PAUSED:
+                '''Passive state. Grapple mechanisms are paused. Awaiting external flags.'''
                 # Setting motor torque to 0 to stop motor
                 self.motor_torque_control(self.grapple_Solo, 0)
 
