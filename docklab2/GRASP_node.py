@@ -545,7 +545,7 @@ class GRASPNode(Node):
             # Testing and debugging flags
             case 'STOP':
                 self.get_logger().warning('Received command: STOP. Stopping grapple motor immediately.')
-                self.grapple_Solo.emergency_stop()                
+                self.motor_torque_control(self.grapple_Solo, 0)           
                 self.grapple_state = GrappleState.IDLE
                 self.get_logger().info('Changed grapple state to IDLE.')
 
