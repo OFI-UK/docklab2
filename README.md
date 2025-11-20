@@ -86,18 +86,21 @@ sudo reboot
     - Install labjack-ljm to py_env environment using "pip install labjack-ljm" 
 
 # Mocap Setup Instructions
+- To install motion capture packages into the workspace follow instructions linked below:
+https://github.com/br3018/mocap4ros2_optitrack
 - Connect base station to mocap laptop over ethernet or wireless connection.
   - If connecting wirelessly be aware latency can be high
 - Launch and setup motive performing calibrations as necessary 
 - Set motive to unicast with local interface of mocap laptop on shared network with base station
-- On base station, setup optitrack configuration at mocap4r2_ws/src/mocap4ros2_optitrack/mocap4r2_optitrack_driver/config/mocap4r2_optitrack_driver_params.yaml
+- On base station, setup optitrack configuration at docklab2_ws/src/mocap4ros2_optitrack/mocap4r2_optitrack_driver/config/mocap4r2_optitrack_driver_params.yaml
   - Set server address as mocap laptop IP address on shared network
   - Set local address as base station IP address on shared network
   - Set other parameters to be the same as in the motive streaming menu where available
   - Do not change any other parameters
-  https://github.com/MOCAP4ROS2-Project/mocap4ros2_optitrack.git
-- Follow instructions linked above to source workspace and launch optitrack system
+ 
+- To launch the optitrack system connection follow the instructions in the github repository
 - Successful launch will display the below:
+"""
 [mocap4r2_optitrack_driver_main-1] [INFO] [1750870175.394628061] [mocap4r2_optitrack_driver_node]: Trying to connect to Optitrack NatNET SDK at 192.168.0.100 ...
 [mocap4r2_optitrack_driver_main-1] [INFO] [1750870175.504141622] [mocap4r2_optitrack_driver_node]: ... connected!
 [mocap4r2_optitrack_driver_main-1] [INFO] [1750870175.507230073] [mocap4r2_optitrack_driver_node]: 
@@ -116,21 +119,18 @@ sudo reboot
 [mocap4r2_optitrack_driver_main-1] [INFO] [1750870175.510198551] [mocap4r2_optitrack_driver_node]: Mocap Framerate : 240.00
 [mocap4r2_optitrack_driver_main-1] 
 [mocap4r2_optitrack_driver_main-1] [INFO] [1750870175.510289276] [mocap4r2_optitrack_driver_node]: Configured!
-
+"""
 - This package doesnt work on a Raspberry Pis' or on anything older than humble
+
 ## Docs: 
 
 # ABPX:
-Services: 
-relay_server3 - server for services for changing state of relays on RPi Relay Board with 3 relays (https://thepihut.com/products/raspberry-pi-relay-board)
-relay_server6 - server for services for changing state of relays on sb components PiRelay 6 Channel (https://thepihut.com/products/pirelay-6)
-
 Nodes: 
 GRASP_node - node for communicating with GRASP MDE and updating GRASP state
-
-Topics: 
-
-Services:
+labjack_node - node for communicating with LabJack devices for datalogging
+base_node - node for controlling docklab 2
+relay_server3 - server for services for changing state of relays on RPi Relay Board with 3 relays (https://thepihut.com/products/raspberry-pi-relay-board)
+relay_server6 - server for services for changing state of relays on sb components PiRelay 6 Channel (https://thepihut.com/products/pirelay-6)
 
 # Running Docklab 2: 
 Setup:
@@ -155,4 +155,3 @@ On base station:
 
 ## Notes: 
  - colcon build command can crash the Raspberry Pi when running, use: colcon build --symlink-install --executor sequential (https://answers.ros.org/question/404536/colcon-build-fails-on-ros2-tutorials/)
- - Current method for killing bag file recording means metadata is not recorded correctly for bag files. Fix this with "ros bag reindex" for now
