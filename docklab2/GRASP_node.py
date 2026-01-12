@@ -92,16 +92,6 @@ class AVCState(Enum):
     POS1p5 = auto()
     POS2 = auto()
 
-# Enum class for ISAM states
-class ISAMState(Enum):
-    """Enumeration of possible states for ISAM facility"""
-    INIT = auto()
-    DISABLED = auto()
-    IDLE = auto()
-    INITIAL_CONDITIONS_STAGING = auto()
-    INITIAL_CONDITIONS_RUNNING = auto()
-    CONTACT_DYNAMICS_RUNNING = auto()
-
 # Class definition for GRASP Node
 class GRASPNode(Node):
     """
@@ -217,14 +207,8 @@ class GRASPNode(Node):
             self.subscription           = self.create_subscription(Float64,'avc_b_motor/position_cmd',     self.avc_b_motor_position_control,10)
             self.subscription           = self.create_subscription(Float64,'avc_b_motor/velocity_cmd',     self.avc_b_motor_speed_control,10)
             self.subscription           = self.create_subscription(Float64,'avc_b_motor/torque_cmd',       self.avc_b_motor_torque_control,10)
-        
-        # Add ISAM Facility topic subscriber
-        self.subscription               = self.create_subscription(String, '/single/orbitfab_command/fsm_state', self.ISAM_fsm_state_callback, 10)
 
         self.subscription # prevent unused variable error
-
-        self.isam_state = ISAMState.IDLE
-        self.isam_state_prev = self.isam_state
         
         # Add GRASP publishers
         if self.grapple_state != GrappleState.ERROR:
@@ -643,48 +627,6 @@ class GRASPNode(Node):
             case _: # Catch invalid command 
                 self.get_logger().error('Unknown GRASP command received')
 
-    # ISAM Facility
-    def ISAM_fsm_state_callback(self, msg):
-        """
-        Callback for ISAM facility FSM state updates.
-        Args:
-            msg (String): ROS message containing the ISAM FSM state.
-        """
-        fsm_state = msg.data
-        match fsm_state:
-            case 'INIT':
-                self.isam_state = ISAMState.INIT
-                if self.isam_state != self.isam_state_prev:
-                    self.get_logger().info('ISAM state transitioned to INIT')
-            case 'DISABLED':        
-                self.isam_state = ISAMState.DISABLED
-                if self.isam_state != self.isam_state_prev:
-                    self.get_logger().info('ISAM state transitioned to DISABLED')
-                    self.grapple_state = GrappleState.PAUSED
-                    self.get_logger().info('Changed grapple state to PAUSED.')
-            case 'IDLE':
-                self.isam_state = ISAMState.IDLE
-                if self.isam_state != self.isam_state_prev:
-                    self.get_logger().info('ISAM state transitioned to IDLE')
-            case 'INITIAL CONDITIONS STAGING':
-                self.isam_state = ISAMState.INITIAL_CONDITIONS_STAGING
-                if self.isam_state != self.isam_state_prev:
-                    self.get_logger().info('ISAM state transitioned to INITIAL CONDITIONS STAGING')
-            case 'INITIAL CONDITIONS RUNNING':
-                self.isam_state = ISAMState.INITIAL_CONDITIONS_RUNNING
-                if self.isam_state != self.isam_state_prev:
-                    self.get_logger().info('ISAM state transitioned to INITIAL CONDITIONS RUNNING')
-                    self.grapple_state = GrappleState.SOFT_DOCKING
-                    self.get_logger().info('Changed grapple state to SOFT_DOCKING.')
-            case 'CONTACT DYNAMICS RUNNING':
-                self.isam_state = ISAMState.CONTACT_DYNAMICS_RUNNING
-                if self.isam_state != self.isam_state_prev:
-                    self.get_logger().info('ISAM state transitioned to CONTACT DYNAMICS RUNNING')
-            case _: # Catch invalid command
-                self.get_logger().error('Unknown ISAM state received')
-        self.isam_state_prev = self.isam_state 
-
-
     # STATE MACHINE CODE
     def GRASP_state_machine(self):
         """
@@ -812,7 +754,6 @@ class GRASPNode(Node):
                             self.avc_a_Solo.set_position_reference(0)
                             # Changing AVC A state to HOME
                             self.avc_a_state = AVCState.HOME
-                            self.get_logger().info('Changed AVC A state to HOME.')
                             self.get_logger().info('Changed AVC A state to HOME.')
                             
                 # Exit conditions
