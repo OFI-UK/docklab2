@@ -121,7 +121,6 @@ class MechanismController(ABC):
         self.logger = logger
         self.motor_params = motor_params
         self._state = None
-        self._homed = False
         self._solo = None
         
         # Motor feedback variables
@@ -335,10 +334,6 @@ class MechanismController(ABC):
     def get_state(self):
         """Get the current state of the mechanism."""
         return self._state
-
-    def is_homed(self) -> bool:
-        """Check if the mechanism has been homed."""
-        return self._homed
     
     def is_error(self) -> bool:
         """Check if the mechanism is in an error state."""
@@ -405,7 +400,6 @@ class GrappleController(MechanismController):
             self.torque_control(0)
             self.reset_position()
             self._state = GrappleState.HOME
-            self._homed = True
             self.logger.info("Grapple reached HOME state")
             return True
         
@@ -606,7 +600,6 @@ class AVCController(MechanismController):
             self.torque_control(0)
             self.reset_position()
             self._state = AVCState.HOME
-            self._homed = True
             self.logger.info(f"{self.name} reached HOME state")
             return True
         
