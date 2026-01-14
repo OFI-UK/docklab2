@@ -73,7 +73,6 @@ class GRASPCommand(Enum):
 # Enum classes for Grapple and AVC states
 class GrappleState(Enum):
     """Enumeration of possible states for the grapple mechanism."""
-    ERROR = auto()
     UNCONTROLLED = auto()
     HOME = auto()
     FREE_FLIGHT = auto()
@@ -85,7 +84,6 @@ class GrappleState(Enum):
 
 class AVCState(Enum):
     """Enumeration of possible states for the AVC mechanism."""
-    ERROR = auto()
     UNCONTROLLED = auto()
     LAUNCH_LOCK = auto()
     HOME = auto()
@@ -139,17 +137,10 @@ class MechanismController(ABC):
             self.logger.info(f"{self.name} initialized successfully in {self._state.name} state")
         except Exception as e:
             self.logger.error(f"Failed to initialize {self.name} motor: {e}")
-            self._state = self._get_error_state()
-            self._solo = None
     
     @abstractmethod
     def _get_initial_state(self):
         """Return the initial state for this mechanism type."""
-        pass
-    
-    @abstractmethod
-    def _get_error_state(self):
-        """Return the error state for this mechanism type."""
         pass
     
     def _initialize_motor(self, available_ports: list):
@@ -250,7 +241,7 @@ class MechanismController(ABC):
         Read current feedback values from the motor controller.
         Updates position, speed, current, and reference values.
         """
-        if self._solo is None:
+        if not self.is_initialised():
             return
         
         try:
@@ -271,7 +262,7 @@ class MechanismController(ABC):
         Args:
             position_reference: Target position in encoder counts
         """
-        if self._solo is None:
+        if not self.is_initialised():
             return
         
         self.logger.debug(f"{self.name}: Changing motor to position mode control and setting position reference {position_reference}")
@@ -285,7 +276,7 @@ class MechanismController(ABC):
         Args:
             speed_reference: Target speed in RPM (negative for clockwise)
         """
-        if self._solo is None:
+        if not self.is_initialised():
             return
         
         self._solo.set_control_mode(solo.ControlMode.SPEED_MODE)
@@ -307,7 +298,7 @@ class MechanismController(ABC):
         Args:
             torque_reference: Target torque in Amperes (negative for clockwise)
         """
-        if self._solo is None:
+        if not self.is_initialised():
             return
         
         self._solo.set_control_mode(solo.ControlMode.TORQUE_MODE)
@@ -324,7 +315,7 @@ class MechanismController(ABC):
     
     def reset_position(self):
         """Reset the motor position counter to zero."""
-        if self._solo is None:
+        if not self.is_initialised():
             return
         
         self._solo.reset_position_to_zero()
@@ -335,9 +326,9 @@ class MechanismController(ABC):
         """Get the current state of the mechanism."""
         return self._state
     
-    def is_error(self) -> bool:
-        """Check if the mechanism is in an error state."""
-        return self._solo is None
+    def is_initialised(self) -> bool:
+        """Check if the mechanism is initialized. True if initialized, False otherwise."""
+        return self._solo is not None
     
 class GrappleController(MechanismController):
     """
@@ -370,37 +361,33 @@ class GrappleController(MechanismController):
         """Return the initial state for grapple mechanism."""
         return GrappleState.UNCONTROLLED
     
-    def _get_error_state(self):
-        """Return the error state for grapple mechanism."""
-        return GrappleState.ERROR
-    
     def home(self) -> bool:
         """
         Move the grapple mechanism to HOME position using current control.
         
         Returns:
-            bool: True if homing is complete, False if still in progress
+            bool: True if homing is complete or motor not initialised, False if still in progress
         """
         if self._state == GrappleState.HOME:
             return True
         
-        if self._state == GrappleState.ERROR:
-            self.logger.warning("Cannot home grapple: in ERROR state")
-            return False
+        if not self.is_initialised():
+            self.logger.warning(f"{self.name} not initialised, simulating HOME state")
+            self._state = GrappleState.HOME
+            return True
         
         # Apply homing current if not already set
         if self.torque_ref != self.HOME_CURRENT_TARGET or \
            self.control_mode != solo.ControlMode.TORQUE_MODE:
             self.torque_control(self.HOME_CURRENT_TARGET)
-            return False
         
         # Check if homing is complete (current reached and motor stopped)
         if abs(self.current) >= abs(self.HOME_CURRENT_TARGET) and self.speed == 0:
-            self.logger.debug("Grapple homing current target reached")
+            self.logger.debug(f"{self.name} homing current target reached")
             self.torque_control(0)
             self.reset_position()
             self._state = GrappleState.HOME
-            self.logger.info("Grapple reached HOME state")
+            self.logger.info(f"{self.name} reached HOME state")
             return True
         
         return False
@@ -411,13 +398,13 @@ class GrappleController(MechanismController):
         
         Note: Implementation not yet defined. Placeholder for future development.
         """
-        if self._state == GrappleState.ERROR:
-            self.logger.warning("Cannot move to FREE_FLIGHT: in ERROR state")
-            return
+        if self._state == GrappleState.FREE_FLIGHT:
+            return True
         
         # TODO: Implement FREE_FLIGHT movement logic
         self._state = GrappleState.FREE_FLIGHT
-        self.logger.info("Grapple moved to FREE_FLIGHT state")
+        self.logger.info(f"{self.name} moved to FREE_FLIGHT state")
+        return False
     
     def open(self) -> bool:
         """
@@ -429,22 +416,22 @@ class GrappleController(MechanismController):
         if self._state == GrappleState.OPEN:
             return True
         
-        if self._state == GrappleState.ERROR:
-            self.logger.warning("Cannot open grapple: in ERROR state")
-            return False
+        if not self.is_initialised():
+            self.logger.warning(f"{self.name} not initialised, simulating OPEN state")
+            self._state = GrappleState.OPEN
+            return True
         
         # Command position if not already set
         if self.position_ref != self.OPEN_POSITION_TARGET or \
            self.control_mode != solo.ControlMode.POSITION_MODE:
             self.position_control(self.OPEN_POSITION_TARGET)
-            return False
         
         # Check if target reached
         if self.position >= self.OPEN_POSITION_TARGET:
-            self.logger.debug("Grapple opening position target reached")
+            self.logger.debug(f"{self.name} opening position target reached")
             self.torque_control(0)
             self._state = GrappleState.OPEN
-            self.logger.info("Grapple reached OPEN state")
+            self.logger.info(f"{self.name} reached OPEN state")
             return True
         
         return False
@@ -459,21 +446,21 @@ class GrappleController(MechanismController):
         if self._state == GrappleState.SOFT_DOCK:
             return True
         
-        if self._state == GrappleState.ERROR:
-            self.logger.warning("Cannot soft dock: in ERROR state")
-            return False
+        if not self.is_initialised():
+            self.logger.warning(f"{self.name} not initialised, simulating SOFT_DOCK state")
+            self._state = GrappleState.SOFT_DOCK
+            return True
         
         # Apply speed control if not already set
         if self.speed_ref != self.SOFT_DOCK_SPEED_TARGET or \
            self.control_mode != solo.ControlMode.SPEED_MODE:
             self.speed_control(self.SOFT_DOCK_SPEED_TARGET)
-            return False
         
         # Check if soft dock position reached
         if self.position <= self.SOFT_DOCK_POSITION_THRESHOLD:
-            self.logger.debug("Grapple soft dock position reached")
+            self.logger.debug(f"{self.name} soft dock position reached")
             self._state = GrappleState.SOFT_DOCK
-            self.logger.info("Grapple reached SOFT_DOCK state")
+            self.logger.info(f"{self.name} reached SOFT_DOCK state")
             return True
         
         return False
@@ -488,22 +475,22 @@ class GrappleController(MechanismController):
         if self._state == GrappleState.HARD_DOCK:
             return True
         
-        if self._state == GrappleState.ERROR:
-            self.logger.warning("Cannot hard dock: in ERROR state")
-            return False
+        if not self.is_initialised():
+            self.logger.warning(f"{self.name} not initialised, simulating HARD_DOCK state")
+            self._state = GrappleState.HARD_DOCK
+            return True
         
         # Apply hard docking current if not already set
         if self.torque_ref != self.HARD_DOCK_CURRENT_TARGET or \
            self.control_mode != solo.ControlMode.TORQUE_MODE:
             self.torque_control(self.HARD_DOCK_CURRENT_TARGET)
-            return False
         
         # Check if hard docking is complete
         if abs(self.current) >= abs(self.HARD_DOCK_CURRENT_TARGET) and self.speed == 0:
-            self.logger.debug("Grapple hard dock current target reached")
+            self.logger.debug(f"{self.name} hard dock current target reached")
             self.torque_control(0)  # May need to maintain force - to be tested
             self._state = GrappleState.HARD_DOCK
-            self.logger.info("Grapple reached HARD_DOCK state")
+            self.logger.info(f"{self.name} reached HARD_DOCK state")
             return True
         
         return False
@@ -518,22 +505,22 @@ class GrappleController(MechanismController):
         if self._state == GrappleState.CLEARANCE:
             return True
         
-        if self._state == GrappleState.ERROR:
-            self.logger.warning("Cannot move to clearance: in ERROR state")
-            return False
+        if not self.is_initialised():
+            self.logger.warning(f"{self.name} not initialised, simulating CLEARANCE state")
+            self._state = GrappleState.CLEARANCE
+            return True
         
         # Command clearance position if not already set
         if self.position_ref != self.CLEARANCE_POSITION_TARGET or \
            self.control_mode != solo.ControlMode.POSITION_MODE:
             self.position_control(self.CLEARANCE_POSITION_TARGET)
-            return False
         
         # Check if target reached
         if self.position >= self.CLEARANCE_POSITION_TARGET:
-            self.logger.debug("Grapple clearance position target reached")
+            self.logger.debug(f"{self.name} clearance position target reached")
             self.torque_control(0)
             self._state = GrappleState.CLEARANCE
-            self.logger.info("Grapple reached CLEARANCE state")
+            self.logger.info(f"{self.name} reached CLEARANCE state")
             return True
         
         return False
@@ -570,10 +557,6 @@ class AVCController(MechanismController):
         """Return the initial state for AVC mechanism."""
         return AVCState.UNCONTROLLED
     
-    def _get_error_state(self):
-        """Return the error state for AVC mechanism."""
-        return AVCState.ERROR
-    
     def home(self) -> bool:
         """
         Move the AVC mechanism to HOME position using current control.
@@ -584,15 +567,15 @@ class AVCController(MechanismController):
         if self._state == AVCState.HOME:
             return True
         
-        if self._state == AVCState.ERROR:
-            self.logger.warning(f"Cannot home {self.name}: in ERROR state")
-            return False
+        if not self.is_initialised():
+            self.logger.warning(f"{self.name} not initialised, simulating HOME state")
+            self._state = AVCState.HOME
+            return True
         
         # Apply homing current if not already set
         if self.torque_ref != self.HOME_CURRENT_TARGET or \
            self.control_mode != solo.ControlMode.TORQUE_MODE:
             self.torque_control(self.HOME_CURRENT_TARGET)
-            return False
         
         # Check if homing is complete
         if abs(self.current) >= abs(self.HOME_CURRENT_TARGET) and self.speed == 0:
@@ -611,13 +594,13 @@ class AVCController(MechanismController):
         
         Note: Implementation not yet defined. Placeholder for future development.
         """
-        if self._state == AVCState.ERROR:
-            self.logger.warning(f"Cannot move {self.name} to LAUNCH_LOCK: in ERROR state")
-            return
+        if self._state == AVCState.LAUNCH_LOCK:
+            return True
         
         # TODO: Implement LAUNCH_LOCK movement logic
         self._state = AVCState.LAUNCH_LOCK
         self.logger.info(f"{self.name} moved to LAUNCH_LOCK state")
+        return False
     
     def pos1(self) -> bool:
         """
@@ -629,15 +612,15 @@ class AVCController(MechanismController):
         if self._state == AVCState.POS1:
             return True
         
-        if self._state == AVCState.ERROR:
-            self.logger.warning(f"Cannot move {self.name} to POS1: in ERROR state")
-            return False
+        if not self.is_initialised():
+            self.logger.warning(f"{self.name} not initialised, simulating POS1 state")
+            self._state = AVCState.POS1
+            return True
         
         # Command position if not already set
         if self.position_ref != self.POS1_TARGET or \
            self.control_mode != solo.ControlMode.POSITION_MODE:
             self.position_control(self.POS1_TARGET)
-            return False
         
         # Check if target reached (with small tolerance)
         if abs(self.position - self.POS1_TARGET) <= 10:
@@ -658,15 +641,15 @@ class AVCController(MechanismController):
         if self._state == AVCState.POS1p5:
             return True
         
-        if self._state == AVCState.ERROR:
-            self.logger.warning(f"Cannot move {self.name} to POS1.5: in ERROR state")
-            return False
+        if not self.is_initialised():
+            self.logger.warning(f"{self.name} not initialised, simulating POS1.5 state")
+            self._state = AVCState.POS1p5
+            return True 
         
         # Command position if not already set
         if self.position_ref != self.POS1P5_TARGET or \
            self.control_mode != solo.ControlMode.POSITION_MODE:
             self.position_control(self.POS1P5_TARGET)
-            return False
         
         # Check if target reached
         if abs(self.position - self.POS1P5_TARGET) <= 10:
@@ -687,15 +670,15 @@ class AVCController(MechanismController):
         if self._state == AVCState.POS2:
             return True
         
-        if self._state == AVCState.ERROR:
-            self.logger.warning(f"Cannot move {self.name} to POS2: in ERROR state")
-            return False
+        if not self.is_initialised():
+            self.logger.warning(f"{self.name} not initialised, simulating POS2 state")
+            self._state = AVCState.POS2
+            return True
         
         # Command position if not already set
         if self.position_ref != self.POS2_TARGET or \
            self.control_mode != solo.ControlMode.POSITION_MODE:
             self.position_control(self.POS2_TARGET)
-            return False
         
         # Check if target reached
         if abs(self.position - self.POS2_TARGET) <= 10:
@@ -811,17 +794,17 @@ class GRASPNode(Node):
 
         
         # Add GRASP publishers
-        if not self.grapple_controller.is_error():
+        if self.grapple_controller.is_initialised():
             self.pub_gra_motor_feedback = self.create_publisher(String,  'gra_motor_feedback', 10)
             self.pub_gra_motor_curr_iq  = self.create_publisher(Float64, 'gra_motor_current_iq', 10)
             self.pub_gra_motor_pos      = self.create_publisher(Int32,   'gra_motor_pos', 10)
             self.pub_gra_motor_vel      = self.create_publisher(Int32,   'gra_motor_vel', 10)
-        if not self.avc_a_controller.is_error():
+        if self.avc_a_controller.is_initialised():
             self.pub_avc_a_motor_feedback = self.create_publisher(String,  'avc_a_motor_feedback', 10)
             self.pub_avc_a_motor_curr_iq  = self.create_publisher(Float64, 'avc_a_motor_current_iq', 10)
             self.pub_avc_a_motor_pos      = self.create_publisher(Int32,   'avc_a_motor_pos', 10)
             self.pub_avc_a_motor_vel      = self.create_publisher(Int32,   'avc_a_motor_vel', 10)
-        if not self.avc_b_controller.is_error():
+        if self.avc_b_controller.is_initialised():
             self.pub_avc_b_motor_feedback = self.create_publisher(String,  'avc_b_motor_feedback', 10)
             self.pub_avc_b_motor_curr_iq  = self.create_publisher(Float64, 'avc_b_motor_current_iq', 10)
             self.pub_avc_b_motor_pos      = self.create_publisher(Int32,   'avc_b_motor_pos', 10)
@@ -864,7 +847,7 @@ class GRASPNode(Node):
         # This function publish the data we want to record for external analysis
         
         # ----------------- Grapple data ----------------------------------
-        if not self.grapple_controller.is_error():
+        if self.grapple_controller.is_initialised():
             msg = String()
             msg.data = f"State: {self.grapple_controller.get_state().name}"
             self.pub_gra_motor_feedback.publish(msg)
@@ -885,7 +868,7 @@ class GRASPNode(Node):
             self.pub_gra_motor_curr_iq.publish(grapple_current_iq_msg)
         
         # ----------------- AVC A data -----------------------------------
-        if not self.avc_a_controller.is_error():
+        if self.avc_a_controller.is_initialised():
             avc_msg = String()
             avc_msg.data = f"State: {self.avc_a_controller.get_state().name}"
             self.pub_avc_a_motor_feedback.publish(avc_msg)
@@ -906,7 +889,7 @@ class GRASPNode(Node):
             self.pub_avc_a_motor_curr_iq.publish(avc_current_iq_msg)
             
         # ----------------- AVC B data -----------------------------------
-        if not self.avc_b_controller.is_error():
+        if self.avc_b_controller.is_initialised():
             avc_msg = String()
             avc_msg.data = f"State: {self.avc_b_controller.get_state().name}"
             self.pub_avc_b_motor_feedback.publish(avc_msg)
@@ -1040,7 +1023,7 @@ class GRASPNode(Node):
                 """
                 
                 # Entry actions: Call grapple controller's home method
-                if not self.grapple_controller.is_error():
+                if self.grapple_controller.is_initialised():
                     self.grapple_controller.home()
                         
                 # Exit conditions
@@ -1061,7 +1044,7 @@ class GRASPNode(Node):
                 """
                 
                 # Entry actions: Call AVC A controller's home method
-                if not self.avc_a_controller.is_error():
+                if self.avc_a_controller.is_initialised():
                     self.avc_a_controller.home()
                             
                 # Exit conditions
@@ -1079,7 +1062,7 @@ class GRASPNode(Node):
                 """
                 
                 # Entry actions: Call AVC B controller's home method
-                if not self.avc_b_controller.is_error():
+                if self.avc_b_controller.is_initialised():
                     self.avc_b_controller.home()
                         
                 # Exit conditions
@@ -1096,7 +1079,7 @@ class GRASPNode(Node):
                 READY command recieved -> Transitions to READY mode
                 """
                 # Entry actions: Call grapple controller's free_flight method
-                if not self.grapple_controller.is_error():
+                if self.grapple_controller.is_initialised():
                     self.grapple_controller.free_flight()
                 
                 # Exit conditions
@@ -1113,7 +1096,7 @@ class GRASPNode(Node):
                 """
                 
                 # Entry actions: Call grapple controller's open method
-                if not self.grapple_controller.is_error():
+                if self.grapple_controller.is_initialised():
                     self.grapple_controller.open()
                 
                 # Exit conditions
@@ -1130,7 +1113,7 @@ class GRASPNode(Node):
                 2) CLEARANCE command received -> Transitions to CLEARANCE mode
                 """
                 # Entry actions: Call grapple controller's soft_dock method
-                if not self.grapple_controller.is_error():
+                if self.grapple_controller.is_initialised():
                     soft_dock_complete = self.grapple_controller.soft_dock()
                     
                     # Exit conditions:
@@ -1153,7 +1136,7 @@ class GRASPNode(Node):
                 4) AVC_B_POS1 command received -> Transitions to AVC_B_POS1 mode
                 """
                 # Entry actions: Call grapple controller's hard_dock method
-                if not self.grapple_controller.is_error():
+                if self.grapple_controller.is_initialised():
                     self.grapple_controller.hard_dock()
 
                 # Exit conditions
@@ -1253,7 +1236,7 @@ class GRASPNode(Node):
                 STOP
                 """
                 # Entry actions: Call grapple controller's clearance method
-                if not self.grapple_controller.is_error():
+                if self.grapple_controller.is_initialised():
                     self.grapple_controller.clearance()
                 
                 # Exit conditions
