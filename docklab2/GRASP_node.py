@@ -131,6 +131,9 @@ class GRASPNode(Node):
 
         
         # Add GRASP publishers
+        self.pub_grasp_mode = self.create_publisher(String, 'grasp_mode', 10)
+        self.pub_grasp_command = self.create_publisher(String, 'grasp_command', 10)
+
         if self.grapple_controller.is_initialised():
             self.pub_gra_motor_feedback = self.create_publisher(String,  'gra_motor_feedback', 10)
             self.pub_gra_motor_curr_iq  = self.create_publisher(Float64, 'gra_motor_current_iq', 10)
@@ -181,12 +184,22 @@ class GRASPNode(Node):
         """
         Publish feedback data for Grapple and AVC motors to their respective ROS topics.
         """
-        # This function publish the data we want to record for external analysis
-        
+        # This function publishes feedback data
+
+        # ----------------- GRASP mode -----------------------------------
+        msg = String()
+        msg.data = f"{self.GRASP_mode.name}"
+        self.pub_grasp_mode.publish(msg)
+
+        # ----------------- GRASP command -----------------------------------
+        msg = String()
+        msg.data = f"{self.GRASP_command.name}"
+        self.pub_grasp_command.publish(msg)
+
         # ----------------- Grapple data ----------------------------------
         if self.grapple_controller.is_initialised():
             msg = String()
-            msg.data = f"State: {self.grapple_controller.get_state().name}"
+            msg.data = f"{self.grapple_controller.get_state().name}"
             self.pub_gra_motor_feedback.publish(msg)
 
             #Position Feedback
@@ -207,7 +220,7 @@ class GRASPNode(Node):
         # ----------------- AVC A data -----------------------------------
         if self.avc_a_controller.is_initialised():
             avc_msg = String()
-            avc_msg.data = f"State: {self.avc_a_controller.get_state().name}"
+            avc_msg.data = f"{self.avc_a_controller.get_state().name}"
             self.pub_avc_a_motor_feedback.publish(avc_msg)
 
             #Position Feedback
@@ -228,7 +241,7 @@ class GRASPNode(Node):
         # ----------------- AVC B data -----------------------------------
         if self.avc_b_controller.is_initialised():
             avc_msg = String()
-            avc_msg.data = f"State: {self.avc_b_controller.get_state().name}"
+            avc_msg.data = f"{self.avc_b_controller.get_state().name}"
             self.pub_avc_b_motor_feedback.publish(avc_msg)
 
             #Position Feedback
