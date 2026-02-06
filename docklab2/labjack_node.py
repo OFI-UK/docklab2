@@ -1,93 +1,68 @@
 """
 Node for handling communications with LabJack
-
-Relevant Documentation:
- 
-LJM Library:
-    LJM Library Installer:
-        https://labjack.com/support/software/installers/ljm
-    LJM Users Guide:
-        https://labjack.com/support/software/api/ljm
-    Opening and Closing:
-        https://labjack.com/support/software/api/ljm/function-reference/opening-and-closing
-    eReadName:
-        https://labjack.com/support/software/api/ljm/function-reference/ljmereadname
- 
-T-Series and I/O:
-    Modbus Map:
-        https://labjack.com/support/software/api/modbus/modbus-map
-    Hardware Overview(Device Information Registers):
-        https://labjack.com/support/datasheets/t-series/hardware-overview
-
 """
 
-#!/usr/bin/env python
+#!/user/bin/env python
 
-# Importing ROS2 Python Client Libraries 
+# Imports
 import rclpy
 from rclpy.node import Node
-
-# Import service type 
 from std_srvs.srv import Trigger
-
-# Import message type 
-from std_msgs.msg import Float32
-
-# Import Labjack Libraries 
+from std_msgs.msg import Float32, String
 from labjack import ljm
+import time
 
-class LabJackNode(Node):
-    # Constructor
-    def __init__(self):
-        # Set node name 
-        super().__init__('labjack_node')
-        # Set up LaJack
-        # Open first found LabJack
-        self.handle = ljm.openS("ANY", "ANY", "ANY")  # Any device, Any connection, Any identifier
-        #handle = ljm.openS("T7", "ANY", "ANY")  # T7 device, Any connection, Any identifier
-        #handle = ljm.openS("T4", "ANY", "ANY")  # T4 device, Any connection, Any identifier
-        #handle = ljm.open(ljm.constants.dtANY, ljm.constants.ctANY, "ANY")  # Any device, Any connection, Any identifier
-        
-        # Log out LabJack info 
-        info = ljm.getHandleInfo(handle)
-        self.get_logger().info("Opened a LabJack with Device type: %i, Connection type: %i,\n"
-              "Serial number: %i, IP address: %s, Port: %i,\nMax bytes per MB: %i" %
-              (info[0], info[1], info[2], ljm.numberToIP(info[3]), info[4], info[5]))
-        
-        # Add read AIN0 publisher
-        self.publisher_ = self.create_publisher(Float32, 'topic', 10)
-        # Add close device service
-        self.srv = self.create_service(Trigger, 'Close', self.Close_callback)
+def labjack_setup(logger):
+    handle = ljm.openS("ANY", "ANY", "ANY")
+    logger.info("Opened a LabJack device.")
 
-    def eReadName_AIN0_callback(self, request, response):
-        # Reading AIN0 from LabJack
-        name = "AIN0"
-        response.data = ljm.eReadName(self.handle, name)
-        # Composing response
-        response.success = True
-        response.message = 'Read AIN0 Successfully '
+    info = ljm.getHandleInfo(handle)
+    logger.info(f"Device type: {info[0]}, Connection type: {info[1]}, Serial number: {info[2]}")
+    return handle
 
-        return response
-        
-    def Close(self, request, response):
-        # Closing LabJack device
-        ljm.close(self.handle)
-        # Composing response
-        response.success = True
-        response.message = 'Closed LabJack Device Successfully '
+def labjack_read(handle, logger):
+    aNames = ["AIN0", "AIN1"]
+    numFrames = len(aNames)
+    aValues = ljm.eReadNames(handle, numFrames, aNames)
+    ain0_value = aValues[0]
+    ain1_value = aValues[1]
+    return {
+        "AIN0": ain0_value,
+        "AIN1": ain1_value,
+    }
 
-        return response
-
+def labjack_close(handle, logger):
+    ljm.close(handle)
+    logger.info("Closed LabJack device.")
 
 def main():
+    # Create an instance of Node for the LabJack device
+    ljmNode = Node('labjack_node')
+    # Use the logger provided by Node
+    logger = ljmNode.get_logger()
+    # Set up subscription to listen for open/close commands
+    ain0_publisher = ljmNode.create_publisher(Float32, 'lbj/ain0', 10)
+    ain1_publisher = ljmNode.create_publisher(Float32, 'lbj/ain1', 10)
+
+    handle = labjack_setup(logger)
+    try:
+        while True:
+            values = labjack_read(handle, logger)
+            logger.info(f"AIN0: {values['AIN0']}, AIN1: {values['AIN1']}")
+            ain0_msg = Float32()
+            ain0_msg.data = values["AIN0"]
+            ain0_publisher.publish(ain0_msg)
+            ain1_msg = Float32()
+            ain1_msg.data = values["AIN1"]
+            ain1_publisher.publish(ain1_msg)
+            time.sleep(0.1)
+            
+    except KeyboardInterrupt:
+        print("Test interrupted by user.")
+    finally:
+        labjack_close(handle, logger)
+        rclpy.shutdown()
+
+if __name__ == "__main__":
     rclpy.init()
-
-    LabJack_server = LabJackServer()
-
-    rclpy.spin(LabJack_server)
-
-    rclpy.shutdown()
-
-
-if __name__ == '__main__':
     main()
