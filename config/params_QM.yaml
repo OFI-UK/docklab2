@@ -1,0 +1,12 @@
+/**: 
+
+  ros__parameters:
+
+    # Valid options for grasp_model: 'EM3', 'EM4', 'QM' 
+    grasp_model: 'QM' # GRASP model
+
+    feedback_params:
+      frequency: 10.0 # [Hz]
+
+    state_machine_params:
+      frequency: 10.0 # [Hz]

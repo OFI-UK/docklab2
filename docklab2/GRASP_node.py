@@ -107,6 +107,7 @@ class GRASPNode(Node):
         grasp_model = self.get_parameter('grasp_model').get_parameter_value().string_value
 
         # Initialize motor controllers
+        self.get_logger().info(f'GRASP model set to: {grasp_model}')
         self.get_logger().debug('Initializing motor controllers')
         
         # Initialize Grapple Controller
